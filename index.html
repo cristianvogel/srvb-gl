@@ -42,7 +42,11 @@
   <body>
     <canvas id="glcanvas" width="100vw" height="100vh" tabindex="1"></canvas>
 
-    <script type="text/javascript" src="nel-vcs-24/js/patch.js" async></script>
+    <script
+      type="text/javascript"
+      src="src/nel-vcs-24/js/patch.js"
+      async
+    ></script>
 
     <script type="text/javascript">
       function showError(errId, errMsg) {
@@ -60,9 +64,9 @@
       document.addEventListener("CABLES.jsLoaded", function (event) {
         CABLES.patch = new CABLES.Patch({
           patch: CABLES.exportedPatch,
-          prefixAssetPath: "nel-vcs-24/",
+          prefixAssetPath: "src/nel-vcs-24/",
           assetPath: "assets/",
-          jsPath: "nel-vcs-24/js/",
+          jsPath: "src/nel-vcs-24/js/",
           glCanvasId: "glcanvas",
           glCanvasResizeToWindow: true,
           onError: showError,
