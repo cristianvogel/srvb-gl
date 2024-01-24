@@ -118,16 +118,21 @@ function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
 // @param {number} props.mix in [0, 1]
 // @param {core.Node} xl input
 // @param {core.Node} xr input
+// @param {number} props.circleID ( from Cables UI )
+// @param {number} props.nodeValue ( from Cables UI )
+//
+
 export default function srvb(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
 
   const key = props.key;
   const sampleRate = props.sampleRate;
-  const size = el.sm(props.size);
+  const size = el.sm( props.size );
   const decay = el.sm(props.decay);
   const modDepth = el.sm(props.mod);
   const mix = el.sm(props.mix);
-
+  // const circleID = el.sm(props.circleID );
+  // const nodeValue = el.sm(props.nodeValue);
   // Upmix to eight channels
   const mid = el.mul(0.5, el.add(xl, xr));
   const side = el.mul(0.5, el.sub(xl, xr));
@@ -137,12 +142,12 @@ export default function srvb(props, xl, xr) {
   // Diffusion
   const ms2samps = (ms) => sampleRate * (ms / 1000.0);
 
-  const d1 = diffuse(ms2samps(43), ...eight);
-  const d2 = diffuse(ms2samps(97), ...d1);
-  const d3 = diffuse(ms2samps(117), ...d2);
+  const d1 = diffuse(ms2samps(37 ) , ...eight);
+  const d2 = diffuse(ms2samps(55 ), ...d1);
+  const d3 = diffuse(ms2samps(137 ), ...d2);
 
   // Reverb network
-  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.004, modDepth, ...d3)
+  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth, ...d3)
   const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth, ...d4);
 
   // Downmix

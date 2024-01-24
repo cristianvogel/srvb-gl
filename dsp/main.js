@@ -40,6 +40,8 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       decay: refs.getOrCreate('decay', 'const', {value: state.decay}, []),
       mod: refs.getOrCreate('mod', 'const', {value: state.mod}, []),
       mix: refs.getOrCreate('mix', 'const', {value: state.mix}, []),
+      circleID: refs.getOrCreate('circleID', 'const', {value: state.circleID || 0}, []),
+      nodeValue: refs.getOrCreate('nodeValue', 'const', {value: state.nodeValue || 0}, [])
     }, el.in({channel: 0}), el.in({channel: 1})));
 
     console.log(stats);
@@ -49,6 +51,8 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('decay', {value: state.decay});
     refs.update('mod', {value: state.mod});
     refs.update('mix', {value: state.mix});
+  //  refs.update('nodeValue', {value: state.nodeValue});
+   // refs.update('circleID', {value: state.circleID});
   }
 
   prevState = state;

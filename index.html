@@ -49,6 +49,7 @@
     ></script>
 
     <script type="text/javascript">
+      let currentID = 0;
       function showError(errId, errMsg) {
         // handle critical errors here if needed
         console.error("CRITICAL ERROR thrown from UI");
@@ -61,18 +62,17 @@
         const readout = patch.getVar("readout");
 
         if (pickedID) {
-          pickedID.on("change", function (newValue) {
+          pickedID.on("change", function (id) {
+            requestParamValueUpdate("circleID", id);
+            currentID = id;
             const stem = "𝌺 NeverEngineLabs ";
-            patch.setVariable(
-              "topLeftText",
-              stem + " » Last touched » " + newValue
-            );
+            patch.setVariable("topLeftText", stem + " » Last touched » " + id);
           });
         }
 
         if (readout) {
           readout.on("change", function (newValue) {
-            requestParamValueUpdate("size", newValue);
+            requestParamValueUpdate("nodeValue", newValue);
           });
         }
       }
@@ -98,10 +98,12 @@
 
       // Interop bindings
       function requestParamValueUpdate(paramId, value) {
-        globalThis.__postNativeMessage__("setParameterValue", {
-          paramId,
-          value,
-        });
+        if (typeof globalThis.__postNativeMessage__ === "function") {
+          globalThis.__postNativeMessage__("setParameterValue", {
+            paramId,
+            value,
+          });
+        }
       }
     </script>
   </body>
