@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+
 
 import { execSync } from 'node:child_process'
 
@@ -37,5 +37,5 @@ export default defineConfig({
     __COMMIT_HASH__: JSON.stringify(currentCommit),
     __BUILD_DATE__: JSON.stringify(dateString),
   },
-  plugins: [react(), pubDirReloadPlugin()],
+  plugins: [ pubDirReloadPlugin() ],
 })
