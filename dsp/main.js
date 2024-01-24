@@ -51,8 +51,8 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('decay', {value: state.decay});
     refs.update('mod', {value: state.mod});
     refs.update('mix', {value: state.mix});
-  //  refs.update('nodeValue', {value: state.nodeValue});
-   // refs.update('circleID', {value: state.circleID});
+    refs.update('nodeValue', {value: state.nodeValue});
+    //refs.update('circleID', {value: state.circleID});
   }
 
   prevState = state;

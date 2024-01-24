@@ -132,7 +132,7 @@ export default function srvb(props, xl, xr) {
   const modDepth = el.sm(props.mod);
   const mix = el.sm(props.mix);
   // const circleID = el.sm(props.circleID );
-  // const nodeValue = el.sm(props.nodeValue);
+  const nodeValue = el.sm(props.nodeValue);
   // Upmix to eight channels
   const mid = el.mul(0.5, el.add(xl, xr));
   const side = el.mul(0.5, el.sub(xl, xr));
@@ -158,8 +158,8 @@ export default function srvb(props, xl, xr) {
   // the index, the shorter the delay line. The mix matrix will mostly address this,
   // but if you sum index 0-3 into the left and 4-7 into the right you can definitely
   // hear the energy in the left channel build before the energy in the right.
-  const yl = el.mul(0.25, el.add(r0[0], r0[2], r0[4], r0[6]));
-  const yr = el.mul(0.25, el.add(r0[1], r0[3], r0[5], r0[7]));
+  const yl = el.mul(nodeValue, el.add(r0[0], r0[2], r0[4], r0[6]));
+  const yr = el.mul(nodeValue, el.add(r0[1], r0[3], r0[5], r0[7]));
 
   // Wet dry mixing
   return [
