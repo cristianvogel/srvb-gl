@@ -44,7 +44,7 @@
 
     <script
       type="text/javascript"
-      src="src/nel-vcs-24/js/patch.js"
+      src="./nel-vcs-24/js/patch.js"
       async
     ></script>
 
@@ -64,9 +64,9 @@
       document.addEventListener("CABLES.jsLoaded", function (event) {
         CABLES.patch = new CABLES.Patch({
           patch: CABLES.exportedPatch,
-          prefixAssetPath: "src/nel-vcs-24/",
+          prefixAssetPath: "",
           assetPath: "assets/",
-          jsPath: "src/nel-vcs-24/js/",
+          jsPath: "",
           glCanvasId: "glcanvas",
           glCanvasResizeToWindow: true,
           onError: showError,
