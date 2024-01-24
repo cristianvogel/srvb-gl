@@ -7,6 +7,6 @@
 [submodule "choc"]
 	path = native/choc
 	url = https://github.com/nick-thompson/choc.git
-[submodule "src/nel-vcs-24"]
-	path = src/nel-vcs-24
+[submodule "public/nel-vcs-24"]
+	path = public/nel-vcs-24
 	url = https://github.com/cristianvogel/nel-vcs-24

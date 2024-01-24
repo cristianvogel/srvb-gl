@@ -51,10 +51,30 @@
     <script type="text/javascript">
       function showError(errId, errMsg) {
         // handle critical errors here if needed
+        console.error("CRITICAL ERROR thrown from UI");
       }
 
       function patchInitialized(patch) {
         // You can now access the patch object (patch), register variable watchers and so on
+        console.log("patch initialized", CABLES);
+        const pickedID = patch.getVar("pickedID");
+        const readout = patch.getVar("readout");
+
+        if (pickedID) {
+          pickedID.on("change", function (newValue) {
+            const stem = "𝌺 NeverEngineLabs ";
+            patch.setVariable(
+              "topLeftText",
+              stem + " » Last touched » " + newValue
+            );
+          });
+        }
+
+        if (readout) {
+          readout.on("change", function (newValue) {
+            requestParamValueUpdate("size", newValue);
+          });
+        }
       }
 
       function patchFinishedLoading(patch) {
@@ -76,14 +96,13 @@
         });
       });
 
-      // disable rubberband effect on mobile devices
-      document.getElementById("glcanvas").addEventListener(
-        "touchmove",
-        (e) => {
-          e.preventDefault();
-        },
-        false
-      );
+      // Interop bindings
+      function requestParamValueUpdate(paramId, value) {
+        globalThis.__postNativeMessage__("setParameterValue", {
+          paramId,
+          value,
+        });
+      }
     </script>
   </body>
 </html>
