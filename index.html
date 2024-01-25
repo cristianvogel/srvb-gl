@@ -12,6 +12,11 @@
         height: 100vh;
       }
 
+      .console {
+        font-weight: lighter;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+      }
       canvas {
         display: block;
         position: absolute;
@@ -50,6 +55,10 @@
 
     <script type="text/javascript">
       let currentID = 0;
+      let currentTimer;
+      const getConsoleDiv = () =>
+        document.getElementsByClassName("cablesEle")[0];
+
       function showError(errId, errMsg) {
         // handle critical errors here if needed
         console.error("CRITICAL ERROR thrown from UI");
@@ -63,15 +72,25 @@
 
         if (pickedID) {
           pickedID.on("change", function (id) {
-            requestParamValueUpdate("circleID", id);
+            const element = getConsoleDiv();
+            clearInterval(currentTimer);
+            element.style.opacity = 1;
+            currentTimer = setInterval(() => {
+              element.style.opacity = 0;
+            }, 3000);
+
             currentID = id;
-            const stem = "𝌺 NeverEngineLabs ";
-            patch.setVariable("topLeftText", stem + " » Last touched » " + id);
+            const stem = "‣ ";
+            patch.setVariable("topLeftText", stem + "Node » " + currentID);
           });
         }
 
         if (readout) {
           readout.on("change", function (newValue) {
+            const element = getConsoleDiv();
+            element.classList.add("fadeIn");
+
+            requestParamValueUpdate("circleID", currentID / 72);
             requestParamValueUpdate("nodeValue", newValue);
           });
         }

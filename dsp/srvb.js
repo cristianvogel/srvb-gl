@@ -23,7 +23,7 @@ const H8 = [[ 1,  1,  1,  1,  1,  1,  1,  1],
 
 // A diffusion step expecting exactly 8 input channels with
 // a maximum diffusion time of 500ms
-function diffuse(size, ...ins) {
+function diffuse(size, circleMod, ...ins ) {
   const len = ins.length;
   const scale = Math.sqrt(1 / len);
 
@@ -37,7 +37,7 @@ function diffuse(size, ...ins) {
 
   return H8.map(function(row, i) {
     return el.add(...row.map(function(col, j) {
-      return el.mul(col * scale, dels[j]);
+      return el.mul( el.cycle( el.mul(row, circleMod) ), col * scale, dels[j]);
     }));
   });
 }
@@ -50,10 +50,10 @@ function diffuse(size, ...ins) {
 // @param {el.const} decay in the range [0, 1]
 // @param {el.const} modDepth in the range [0, 1]
 // @param {...core.Node} ...ins eight input channels
-function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
+function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, ...ins) {
   const len = ins.length;
   const scale = Math.sqrt(1 / len);
-  const md = el.mul(modDepth, 0.02);
+  const md = el.mul(modDepth, circleMod);
 
   if (len !== 8)
     throw new Error("Invalid FDN step!");
@@ -67,7 +67,7 @@ function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
       el.mul(
         decay,
         el.smooth(
-          0.105,
+          circleMod,
           el.tapIn({name: `${name}:fdn${i}`}),
         ),
       ),
@@ -131,7 +131,7 @@ export default function srvb(props, xl, xr) {
   const decay = el.sm(props.decay);
   const modDepth = el.sm(props.mod);
   const mix = el.sm(props.mix);
-  // const circleID = el.sm(props.circleID );
+  const circleMod = el.sm(props.circleID);
   const nodeValue = el.sm(props.nodeValue);
   // Upmix to eight channels
   const mid = el.mul(0.5, el.add(xl, xr));
@@ -142,13 +142,13 @@ export default function srvb(props, xl, xr) {
   // Diffusion
   const ms2samps = (ms) => sampleRate * (ms / 1000.0);
 
-  const d1 = diffuse(ms2samps(37 ) , ...eight);
-  const d2 = diffuse(ms2samps(55 ), ...d1);
-  const d3 = diffuse(ms2samps(137 ), ...d2);
+  const d1 = diffuse(ms2samps(37), circleMod , ...eight);
+  const d2 = diffuse(ms2samps(55), circleMod  , ...d1);
+  const d3 = diffuse(ms2samps(137), circleMod , ...d2);
 
   // Reverb network
-  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth, ...d3)
-  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth, ...d4);
+  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth,circleMod, ...d3 )
+  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth,circleMod, ...d4 );
 
   // Downmix
   //
