@@ -40,9 +40,9 @@
       content="width=device-width, user-scalable=no, initial-scale=1"
     />
     <meta itemprop="name" content="NEL-VCS-v1.0" />
-    <meta itemprop="description" content="made with cables" />
+    <meta itemprop="description" content="neverenginelabs.com" />
     <meta itemprop="image" content="screenshot.png" />
-    <meta name="description" content="made with cables" />
+    <meta name="description" content="neverenginelabs.com" />
   </head>
   <body>
     <canvas id="glcanvas" width="100vw" height="100vh" tabindex="1"></canvas>
@@ -64,9 +64,25 @@
         console.error("CRITICAL ERROR thrown from UI");
       }
 
+      // Cables patch initialized, set up interop bindings
+      // prepare for connecting patch vars to Elementary native
       function patchInitialized(patch) {
-        // You can now access the patch object (patch), register variable watchers and so on
         console.log("patch initialized", CABLES);
+
+        const cablesVariables = patch.getVars();
+        // select only the variables with keys that start with the prefix "ui_"
+        const uiVariables = Object.keys(cablesVariables).filter((key) =>
+          key.startsWith("ui_")
+        );
+
+        for (const key of uiVariables) {
+          const value = cablesVariables[key];
+          const paramId = key.replace("ui_", "");
+          value.on("change", function (newValue) {
+            requestParamValueUpdate(paramId, newValue);
+          });
+        }
+
         const pickedID = patch.getVar("pickedID");
         const readout = patch.getVar("readout");
 
