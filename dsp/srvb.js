@@ -37,7 +37,7 @@ function diffuse(size, circleMod, ...ins ) {
 
   return H8.map(function(row, i) {
     return el.add(...row.map(function(col, j) {
-      return el.mul( el.cycle( el.mul(row, circleMod) ), col * scale, dels[j]);
+      return el.mul( el.cycle( el.mul((i+1), circleMod) ), col * scale, dels[j]);
     }));
   });
 }
