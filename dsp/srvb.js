@@ -32,12 +32,12 @@ function diffuse(size, circleMod, ...ins ) {
 
   const dels = ins.map(function(input, i) {
     const lineSize = size * ((i + 1) / len);
-    return el.sdelay({size: lineSize}, input);
+    return el.dcblock(el.sdelay({size: lineSize}, input));
   });
 
   return H8.map(function(row, i) {
     return el.add(...row.map(function(col, j) {
-      return el.mul( el.cycle( el.mul((i+1), circleMod) ), col * scale, dels[j]);
+      return el.mul( el.cycle( el.mul(row, circleMod) ), col * scale, dels[j]);
     }));
   });
 }
@@ -50,7 +50,7 @@ function diffuse(size, circleMod, ...ins ) {
 // @param {el.const} decay in the range [0, 1]
 // @param {el.const} modDepth in the range [0, 1]
 // @param {...core.Node} ...ins eight input channels
-function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, ...ins) {
+function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, nodeValue, ...ins) {
   const len = ins.length;
   const scale = Math.sqrt(1 / len);
   const md = el.mul(modDepth, circleMod);
@@ -87,7 +87,7 @@ function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, ...ins) {
     // Each delay line here will be ((i + 1) * 17)ms long, multiplied by [1, 4]
     // depending on the size parameter. So at size = 0, delay lines are 17, 34, 51, ...,
     // and at size = 1 we have 68, 136, ..., all in ms here.
-    const delaySize = el.mul(el.add(1.00, el.mul(3, size)), ms2samps((i + 1) * 17));
+    const delaySize = el.mul(el.add(1.00, el.mul(nodeValue, size)), ms2samps((i + 1) * 17));
 
     // Then we modulate the read position for each tap to add some chorus in the
     // delay network.
@@ -147,8 +147,8 @@ export default function srvb(props, xl, xr) {
   const d3 = diffuse(ms2samps(137), circleMod , ...d2);
 
   // Reverb network
-  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth,circleMod, ...d3 )
-  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth,circleMod, ...d4 );
+  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth,circleMod, nodeValue, ...d3 )
+  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth,circleMod, nodeValue, ...d4 );
 
   // Downmix
   //
@@ -158,8 +158,8 @@ export default function srvb(props, xl, xr) {
   // the index, the shorter the delay line. The mix matrix will mostly address this,
   // but if you sum index 0-3 into the left and 4-7 into the right you can definitely
   // hear the energy in the left channel build before the energy in the right.
-  const yl = el.mul(nodeValue, el.add(r0[0], r0[2], r0[4], r0[6]));
-  const yr = el.mul(nodeValue, el.add(r0[1], r0[3], r0[5], r0[7]));
+  const yl = el.mul( el.min(nodeValue, 0.4) , el.add(r0[0], r0[2], r0[4], r0[6]));
+  const yr = el.mul(el.min(nodeValue, 0.4) , el.add(r0[1], r0[3], r0[5], r0[7]));
 
   // Wet dry mixing
   return [
