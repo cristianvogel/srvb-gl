@@ -64,9 +64,25 @@
         console.error("CRITICAL ERROR thrown from UI");
       }
 
+      // Cables patch initialized, set up interop bindings
+      // prepare for connecting patch vars to Elementary native
       function patchInitialized(patch) {
         // You can now access the patch object (patch), register variable watchers and so on
         console.log("patch initialized", CABLES);
+
+        const cablesVariables = patch.getVars();
+        // select only the variables with keys that start with the prefix "ui_"
+        const uiVariables = Object.keys(cablesVariables).filter((key) =>
+          key.startsWith("ui_")
+        );
+
+        for (const key of uiVariables) {
+          const value = cablesVariables[key];
+          const paramId = key.replace("ui_", "");
+          value.on("change", function (newValue) {
+            requestParamValueUpdate(paramId, newValue);
+          });
+        }
         const pickedID = patch.getVar("pickedID");
         const readout = patch.getVar("readout");
 
