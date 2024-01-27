@@ -59,7 +59,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       mod: refs.getOrCreate('mod', 'const', {value: state.mod }, []),
     }, el.in({channel: 0}), el.in({channel: 1})));
 
-    console.log(stats, meter);
+    console.log(stats);
   } else {
     console.log('Updating refs');
     refs.update('size', {value: state.size});

@@ -16,5 +16,7 @@ cd(buildDir);
 let buildType = argv.dev ? 'Debug' : 'Release';
 let devFlag = argv.dev ? '-DELEM_DEV_LOCALHOST=1' : '';
 
+// uncomment this to make the stuff in build/scripted runnable in XCode
+//await $`cmake -G Xcode -DCMAKE_BUILD_TYPE=${buildType} -DCMAKE_INSTALL_PREFIX=./out/ -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 ${devFlag} ../..`;
 await $`cmake -DCMAKE_BUILD_TYPE=${buildType} -DCMAKE_INSTALL_PREFIX=./out/ -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 ${devFlag} ../..`;
 await $`cmake --build . --config ${buildType} -j 4`;
