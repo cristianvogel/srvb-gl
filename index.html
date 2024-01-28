@@ -94,7 +94,8 @@
           if (
             paramId !== "pickedID" &&
             paramId !== "readout" &&
-            paramId !== "interpolatingPreset"
+            paramId !== "interpolatingPreset" &&
+            paramId !== "paramsAverage"
           ) {
             value.on("change", function (newValue) {
               requestParamValueUpdate(paramId, newValue);
@@ -103,9 +104,31 @@
         }
 
         // special cases of variables that need to be handled differently
-        const interpolatingPreset = patch.getVar("interpolatingPreset");
+        const paramsAverage = patch.getVar("ui_paramsAverage");
         const pickedID = patch.getVar("pickedID");
         const readout = patch.getVar("readout");
+        const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
+
+        // inerpolatingPreset is an array of all preset parameters
+        // and is interpolated on the Cables side
+
+        // extract the preset parameters from the array
+        // and send them to native plugin
+        // use the average as a change trigger
+
+        if (paramsAverage) {
+          paramsAverage.on("change", function (val) {
+            const values = interpolatingPreset.getValue();
+            if (values && values.length >= 4) {
+              const params = ["decay", "mix", "mod", "size"];
+              for (let i = 0; i < 4; i++) {
+                if (values[i] !== undefined && params[i] !== undefined) {
+                  requestParamValueUpdate(params[i], values[i]);
+                }
+              }
+            }
+          });
+        }
 
         // pickedID is the index of the preset that is currently being picked under the mouse
         // it needs to be divided by 2 because the preset index is 2->72
