@@ -1,11 +1,5 @@
 import { defineConfig } from 'vite'
-
-
-import { execSync } from 'node:child_process'
-
-const currentCommit = execSync("git rev-parse --short HEAD").toString();
-const date = new Date();
-const dateString = `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 // A helper plugin which specifically watches for changes to public/dsp.main.js,
 // which is built in a parallel watch job via esbuild during dev.
@@ -33,9 +27,5 @@ function pubDirReloadPlugin() {
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
-  define: {
-    __COMMIT_HASH__: JSON.stringify(currentCommit),
-    __BUILD_DATE__: JSON.stringify(dateString),
-  },
-  plugins: [ pubDirReloadPlugin() ],
+  plugins: [ svelte(), pubDirReloadPlugin() ],
 })
