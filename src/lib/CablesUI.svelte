@@ -13,7 +13,7 @@
       new CABLES.Patch({
         patch: CABLES.exportedPatch,
         prefixAssetPath: "",
-        assetPath: "../assets/",
+        assetPath: "",
         jsPath: pathPatch,
         glCanvasId: `cables_${patch}`,
         glCanvasResizeToWindow: true,
