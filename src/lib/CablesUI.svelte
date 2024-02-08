@@ -1,13 +1,58 @@
+<script context="module" lang="ts">
+  // CABLES is a global object that doesn't exist until the patch is ready
+  declare var CABLES: any;
+  declare var globalThis: any;
+</script>
+
 <script lang="ts">
-  import { CablesPatch } from "../stores/stores";
+  import {
+    CablesPatch,
+    ParamIds,
+    PixelDensity,
+    HostState,
+    ErrorStore,
+  } from "../stores/stores";
   import { onMount } from "svelte";
 
   export let patch: string;
 
   let pathPatch: string = `/${patch}/patch.js`;
 
-  // move Cables assets folder up to /public or they don't get found
+  onMount(async () => {
+    // put the device pixel density into a store
+    // this is used to scale mouse movement for (non) high DPI displays
+    $PixelDensity = window.devicePixelRatio || 1;
+    console.log("Using PixelDensity: ", $PixelDensity);
 
+    // load the Cables patch here
+    // seems to work
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/nel-vcs-24/js/patch.js";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      }).then(() => {
+        initializeCables();
+      });
+    } catch (error) {
+      console.error("Error loading Cables Patch", error);
+    }
+  });
+
+  function registerMessagesFromHost() {
+    // register messages from the host
+    globalThis.__receiveStateChange__ = function (state) {
+      $HostState = JSON.parse(state);
+    };
+
+    globalThis.__receiveError__ = (err) => {
+      $ErrorStore = { error: err };
+    };
+  }
+
+  // move Cables assets folder up to /public or they don't get found
   const initializeCables = () => {
     CablesPatch.set(
       new CABLES.Patch({
@@ -29,50 +74,27 @@
 
   function showError(errId: any, errMsg: any) {
     // handle critical errors here if needed
-    console.error("BLOODY ERROR from UI");
+    console.error("ERROR from UI");
   }
 
   // Cables patch initialized, set up interop bindings
   // prepare for connecting patch vars to Elementary native
 
   function patchInitialized(patch: any) {
-    console.log("patch initialized", patch);
-
     // get  all the variables from the Cables patch
-    const cablesVariables = patch.getVars();
-    console.log("cablesVariables", cablesVariables);
-    // select only the variables with keys that start with the prefix "ui_"
-    const uiVariables = Object.keys(cablesVariables).filter((key) =>
-      key.startsWith("ui_")
-    );
+    // const cablesVariables = patch.getVars();
 
-    // iterate over all the variables and set up generic event listeners
-    // that will send the variable value to native plugin through
-    // the requestParamValueUpdate function
-    for (const key of uiVariables) {
-      const value = cablesVariables[key];
-      const paramId = key.replace("ui_", "");
-      if (
-        paramId !== "pickedID" &&
-        paramId !== "readout" &&
-        paramId !== "interpolatingPreset" &&
-        paramId !== "paramsAverage"
-      ) {
-        value.on("change", function (newValue: number) {
-          requestParamValueUpdate(paramId, newValue);
-        });
-      }
-    }
+    // register messages from the host
+    registerMessagesFromHost();
 
     // special cases of variables that need to be handled differently
     const paramsAverage = patch.getVar("ui_paramsAverage");
-    const pickedID = patch.getVar("pickedID");
-    const readout = patch.getVar("readout");
+    const pickedID = patch.getVar("ui_pickedID");
+    const readout = patch.getVar("ui_readout");
     const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
 
     // inerpolatingPreset is an array of all preset parameters
     // and is interpolated on the Cables side
-
     // extract the preset parameters from the array
     // and send them to native plugin
     // use the average as a change trigger
@@ -81,7 +103,7 @@
       paramsAverage.on("change", function (newValue: number) {
         const values = interpolatingPreset.getValue();
         if (values && values.length >= 4) {
-          const params = ["decay", "mix", "mod", "size"];
+          const params = $ParamIds;
           for (let i = 0; i < 4; i++) {
             if (values[i] !== undefined && params[i] !== undefined) {
               requestParamValueUpdate(params[i], values[i]);
@@ -92,27 +114,20 @@
     }
 
     // pickedID is the index of the preset that is currently being picked under the mouse
-    // it needs to be divided by 2 because the preset index is 2->72
-    // but actually there are only 36 presets
+    // 36 presets
+    // todo: use this for something, make it a store
     if (pickedID) {
       pickedID.on("change", function (id: number) {
         // store it in a global variable
-        currentID = id / 2;
-        // log to the console inside the patch
-        const stem = "‣ ";
-        patch.setVariable("topLeftText", stem + "Node » " + currentID);
+        currentID = id;
       });
     }
   }
 
-  function patchFinishedLoading() {
-    // The patch is ready now, all assets have been loaded
-    // not used so far
-  }
+  function patchFinishedLoading() {}
 
   // Interop bindings
   function requestParamValueUpdate(paramId: string, value: number) {
-    let globalThis = window as any;
     if (typeof globalThis.__postNativeMessage__ === "function") {
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
@@ -120,20 +135,6 @@
       });
     }
   }
-  onMount(async () => {
-    try {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "/nel-vcs-24/js/patch.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    } catch (error) {
-      console.error("Error loading Cables Patch", error);
-    }
-    initializeCables();
-  });
 </script>
 
-<canvas id="cables_{patch}" />
+<canvas id="cables_{patch}" width="800" height="474" />
