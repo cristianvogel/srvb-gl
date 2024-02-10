@@ -56,13 +56,6 @@ canvas {
   position: absolute;
 }
 
-.console {
-  position: fixed;
-  font-weight: lighter;
-  opacity: 1;
-  transition: opacity 0.5s ease-in-out;
-}
-
 * {
   /* disable on touch highlights of html elements, especially on mobile! */
   -webkit-tap-highlight-color: transparent;
