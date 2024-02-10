@@ -2,13 +2,6 @@ import {Renderer, el} from '@elemaudio/core';
 import {RefMap} from './RefMap';
 import srvb from './srvb';
 
-// folding algorithm from thi.ng lib
-const foldback = (e, x) =>
-	x < -e || x > e ? Math.abs(Math.abs((x - e) % (4 * e)) - 2 * e) - e : x;
-let nodeValueNumber = 0;
-
-// const patch = globalThis.CABLES.patch
-
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
 //
@@ -101,3 +94,9 @@ globalThis.__receiveHydrationData__ = (data) => {
 globalThis.__receiveError__ = (err) => {
   console.log(`[Error: ${err.name}] ${err.message}`);
 };
+
+// additional heper functions added by @NEL
+
+// folding algorithm from thi.ng lib
+const foldback = (e, x) =>
+	x < -e || x > e ? Math.abs(Math.abs((x - e) % (4 * e)) - 2 * e) - e : x;
