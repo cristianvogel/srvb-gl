@@ -16,14 +16,14 @@ export const StateFSM =
         updatingHost: {
             _enter() {
                 SourceOfChange.set('ui');
-                this.set.debounce(1000)
+                this.set.debounce(1)
             },
             set: 'ready'
         },
         updatingUI: {
             _enter() {
                 SourceOfChange.set('host');
-                this.set.debounce(1000)
+                this.set.debounce(1)
             },
             set: 'ready'
         }

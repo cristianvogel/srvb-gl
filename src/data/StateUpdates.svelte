@@ -6,10 +6,12 @@
     ConsoleText,
     HostState,
     NativeMessage,
+    PreviousHostState,
     SourceOfChange,
   } from "../stores/stores";
   import { get } from "svelte/store";
   import { StateFSM } from "../stores/fsm";
+  import { equiv } from "@thi.ng/equiv";
 
   $: if ($CablesPatch) {
     setupUIParamCallbacksAndState($CablesPatch);
@@ -19,17 +21,21 @@
     if ($CablesParams) {
       $CablesParams = $CablesParams;
 
-      const paramIDs: string[] | undefined = getParamIDsFromCablesVars();
+      const paramIDs: string[] = getParamIDsFromCablesVars();
 
       // go through and set all the param_ variables in the cables patch
       if (paramIDs) {
-        paramIDs.forEach((pid: string) => {
+        for (const pid of paramIDs) {
+          if (!$HostState) break;
           const cablesVarName = "param_" + pid;
           const parsedHostState = JSON.parse($HostState);
-          if ($StateFSM === "updatingUI") {
+          if (
+            $StateFSM === "updatingUI" &&
+            !equiv($CablesPatch.getVar(cablesVarName), parsedHostState[pid])
+          ) {
             $CablesPatch.setVariable(cablesVarName, parsedHostState[pid]);
           }
-        });
+        }
       }
     }
   }
@@ -46,8 +52,8 @@
         // remove the "param_" prefix from the param name
         // to satisfy a paramId type that the host can match
         const paramId = cablesVar.replace("param_", "");
-
-        $NativeMessage.requestParamValueUpdate(paramId, newValue);
+        if ($StateFSM !== "updatingUI")
+          $NativeMessage.requestParamValueUpdate(paramId, newValue);
       });
     });
   }

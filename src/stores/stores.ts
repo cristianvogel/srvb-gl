@@ -68,9 +68,13 @@ export type NativeMessages = {
 export const NativeMessage: Writable<NativeMessages> = writable({
   requestParamValueUpdate: function (paramId: string, value: number) {
     // trigger FSM transition
-    StateFSM.update("host");
+
     ConsoleText.set(" sending from UI ");
-    if (typeof globalThis.__postNativeMessage__ === "function") {
+    if (
+      typeof globalThis.__postNativeMessage__ === "function" &&
+      get(StateFSM) !== "updatingUI"
+    ) {
+      StateFSM.update("host");
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
         value,
