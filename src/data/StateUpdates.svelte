@@ -7,7 +7,9 @@
     NativeMessage,
   } from "../stores/stores";
   import { get } from "svelte/store";
-  import { UpdateStateFSM } from "../stores/fsm";
+
+  import { StateFSM } from "../stores/fsm.js";
+
   import { equiv } from "@thi.ng/equiv";
 
   $: if ($CablesPatch) {
