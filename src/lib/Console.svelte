@@ -1,4 +1,5 @@
 <script lang="ts">
+  // a Console for debugging or displaying other messages
   export let message: string;
 </script>
 
