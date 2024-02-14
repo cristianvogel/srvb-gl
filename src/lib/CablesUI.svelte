@@ -17,7 +17,7 @@
   import { onMount } from "svelte";
   import Console from "./Console.svelte";
   import StateUpdates from "../data/StateUpdates.svelte";
-  import { StateFSM } from "../stores/fsm";
+  import { StateFSM } from "../stores/fsm.js";
   // component props
   export let patch: string;
 
