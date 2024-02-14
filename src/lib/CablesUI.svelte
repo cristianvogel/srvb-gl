@@ -18,7 +18,7 @@
   import Console from "./Console.svelte";
   import StateUpdates from "../data/StateUpdates.svelte";
 
-  import { UpdateStateFSM } from "../stores/fsm.js";
+  import { UpdateStateFSM } from "../stores/fsm";
   import Nodes from "../data/Nodes.svelte";
 
   // component props

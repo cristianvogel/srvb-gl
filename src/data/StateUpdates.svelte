@@ -8,7 +8,7 @@
   } from "../stores/stores";
   import { get } from "svelte/store";
 
-  import { StateFSM } from "../stores/fsm.js";
+  import { UpdateStateFSM } from "../stores/fsm";
 
   import { equiv } from "@thi.ng/equiv";
 
