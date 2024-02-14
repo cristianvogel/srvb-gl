@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CablesUi from "./ui/CablesUI.svelte";
+  import CablesUi from "./lib/CablesUI.svelte";
 </script>
 
 <main>
