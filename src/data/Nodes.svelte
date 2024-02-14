@@ -1,4 +1,6 @@
 <script lang="ts">
+  // Update the Cables patch with the current state of the UI
+  // reflected in the UI_StateArray store
   import { UI_StateArray, CablesPatch } from "../stores/stores";
   type CablesVar = ReturnType<typeof $CablesPatch.getVar>;
 
