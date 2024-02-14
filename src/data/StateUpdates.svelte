@@ -3,14 +3,11 @@
   import {
     CablesParams,
     CablesPatch,
-    ConsoleText,
     HostState,
     NativeMessage,
-    PreviousHostState,
-    SourceOfChange,
   } from "../stores/stores";
   import { get } from "svelte/store";
-  import { StateFSM } from "../stores/fsm";
+  import { UpdateStateFSM } from "../stores/fsm";
   import { equiv } from "@thi.ng/equiv";
 
   $: if ($CablesPatch) {
@@ -30,7 +27,7 @@
           const cablesVarName = "param_" + pid;
           const parsedHostState = JSON.parse($HostState);
           if (
-            $StateFSM === "updatingUI" &&
+            $UpdateStateFSM === "updatingUI" &&
             !equiv($CablesPatch.getVar(cablesVarName), parsedHostState[pid])
           ) {
             $CablesPatch.setVariable(cablesVarName, parsedHostState[pid]);
@@ -52,7 +49,7 @@
         // remove the "param_" prefix from the param name
         // to satisfy a paramId type that the host can match
         const paramId = cablesVar.replace("param_", "");
-        if ($StateFSM !== "updatingUI")
+        if ($UpdateStateFSM !== "updatingUI")
           $NativeMessage.requestParamValueUpdate(paramId, newValue);
       });
     });

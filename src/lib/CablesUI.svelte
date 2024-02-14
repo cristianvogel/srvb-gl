@@ -10,14 +10,15 @@
     PixelDensity,
     ConsoleText,
     NativeMessage,
-    SourceOfChange,
     CablesParams,
+    manifest,
   } from "../stores/stores";
 
   import { onMount } from "svelte";
   import Console from "./Console.svelte";
   import StateUpdates from "../data/StateUpdates.svelte";
-  import { StateFSM } from "../stores/fsm";
+  import { UpdateStateFSM } from "../stores/fsm";
+  import Nodes from "../data/Nodes.svelte";
   // component props
   export let patch: string;
 
@@ -62,6 +63,13 @@
         onPatchLoaded: patchInitialized,
         onFinishedLoading: patchFinishedLoading,
         canvas: { alpha: true, premultipliedAlpha: true },
+        variables: {
+          // overrides for values of vars from the Cables patch for any
+          // variables in this list
+          // Initialise patch_NodeStateArray here then
+          // todo: restore a saved state? Shuld all empty be the default init?
+          patch_NodeStateArray: new Array(manifest.ui_numberOfNodes).fill(0),
+        },
       })
     );
   };
@@ -119,11 +127,11 @@
 
 <canvas id="cables_{patch}" width="800" height="474" />
 <StateUpdates />
+{#if $CablesParams}
+  <Nodes cablesVarKey="patch_NodeStateArray" />
+{/if}
 <div class="console">
   <Console message={$ConsoleText} />
-</div>
-<div class="console">
-  <Console message={"FSM: " + $StateFSM} />
 </div>
 
 <style>

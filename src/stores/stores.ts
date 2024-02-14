@@ -1,19 +1,26 @@
 declare var globalThis: any;
 
 import { get, writable, type Writable } from "svelte/store";
-import type { Parameter } from "../../types";
-import { StateFSM } from "./fsm";
+
+import { createNodeStateFSM, UpdateStateFSM } from "./fsm";
+import type {
+  Parameter,
+  LocalManifest,
+  NativeMessages,
+  NodeState,
+} from "../../types";
 
 //---- Cables  -------------------
-export const CablesPatch: Writable<any> = writable();
-export const CablesParams: Writable<any> = writable();
+export const CablesPatch: Writable<any> = writable(null);
+export const CablesParams: Writable<any> = writable(null);
 // ---- Parameters  -------------------
 // not sure how to import this dynamically at build time
 // and its really only referenced here just be
 // sure to make it reflect public/manifest.json if that
 // gets updated
 
-export const manifest = {
+export const manifest: LocalManifest = {
+  ui_numberOfNodes: 36,
   window: {
     width: 800,
     height: 444,
@@ -42,15 +49,25 @@ export const manifest = {
 
 // ---- state synchronisation -------------------
 export const HostState: Writable<any> = writable();
-export const PreviousHostState: Writable<any> = writable();
+export const PreviousHostState: Writable<any> = writable(); // todo: check if this is actually being used
 export const ErrorStore: Writable<any> = writable();
-export const SourceOfChange: Writable<string> = writable("");
+
+// flag set inside the UpdateStateFSM state machine,
+// used to prevent circular update loops between host and UI
+export const SourceOfChange: Writable<"ui" | "host" | ""> = writable("");
+
+// create a state machine for each node that will be used to
+// track whether the node is holding stored preset values
+export const UI_StateArray: Writable<NodeState[]> = writable(
+  new Array(manifest.ui_numberOfNodes).fill(null).map(createNodeStateFSM)
+);
 
 //---- other stuff -------------------
+// a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
 export const PixelDensity: Writable<number> = writable(2);
 
-// ---- parameters -------------------
+//---- audio parameters -------------------
 export const Parameters: Writable<Parameter[]> = writable(manifest.parameters);
 export const DisplayNames: Writable<string[]> = writable(
   manifest.parameters.map((p: Parameter) => p.name)
@@ -59,22 +76,17 @@ export const ParamIds: Writable<string[]> = writable(
   manifest.parameters.map((p: Parameter) => p.paramId)
 );
 
-export type NativeMessages = {
-  requestParamValueUpdate(paramId: string, value: number): void;
-  registerMessagesFromHost(): void;
-  requestReady(): void;
-};
 // ---- native interops -------------------
+
 export const NativeMessage: Writable<NativeMessages> = writable({
   requestParamValueUpdate: function (paramId: string, value: number) {
     // trigger FSM transition
 
-    ConsoleText.set(" sending from UI ");
     if (
       typeof globalThis.__postNativeMessage__ === "function" &&
-      get(StateFSM) !== "updatingUI"
+      get(UpdateStateFSM) !== "updatingUI"
     ) {
-      StateFSM.update("host");
+      UpdateStateFSM.update("host");
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
         value,
@@ -84,10 +96,9 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   // register messages from the host
   registerMessagesFromHost: function () {
     globalThis.__receiveStateChange__ = function (state: any) {
-      ConsoleText.set(" receiving from host ");
       PreviousHostState.set(get(HostState));
       // trigger FSM transition
-      StateFSM.update("ui");
+      UpdateStateFSM.update("ui");
       HostState.set(state);
     };
     globalThis.__receiveError__ = function (error: any) {
