@@ -28,28 +28,23 @@
   function setupCablesPatchObservers(patch: CablesPatch) {
     const paramsAverage = patch.getVar("ui_paramsAverage");
     const pickedID = patch.getVar("param_pickedID");
+    const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
 
-    // ---- interpolating objekt
-    // inerpolatingPreset is an Object of all preset parameters
+    // inerpolatingPreset is an array of all preset parameters
     // and is interpolated on the Cables side.
-    // Extract the preset parameters from the object
+    // Extract the preset parameters from the array
     // and send them to native plugin
-    // using a sum of all parameters to trigger a change
+    // Reacting to an array sum as change trigger  ( what if average is 0 🤔 )
     if (paramsAverage) {
-      paramsAverage.on("change", function (newValue: any) {
-        let interpolatingPreset = patch.getVar("ui_interpolatingPresetObject");
-        if (interpolatingPreset === undefined) return;
-        interpolatingPreset = interpolatingPreset.getValue();
-        if (Object.keys(interpolatingPreset).length >= NUMBER_PARAMS) {
+      paramsAverage.on("change", function () {
+        const values = interpolatingPreset.getValue();
+        if (values && values.length >= NUMBER_PARAMS) {
           const params = $ParamIds;
-          Object.keys(interpolatingPreset).forEach((key) => {
-            const paramId = params[parseInt(key)];
-            const paramValue: number = Number(interpolatingPreset[key]);
-            if (paramId && interpolatingPreset[key]) {
-              console.log("paramId: ", paramId, "value: ", paramValue);
-              $NativeMessage.requestParamValueUpdate(paramId, paramValue);
+          for (let i = 0; i < NUMBER_PARAMS; i++) {
+            if (values[i] !== undefined && params[i] !== undefined) {
+              $NativeMessage.requestParamValueUpdate(params[i], values[i]);
             }
-          });
+          }
         }
       });
     }
