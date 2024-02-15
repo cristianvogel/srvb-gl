@@ -12,12 +12,14 @@
 
   import { equiv } from "@thi.ng/equiv";
 
-  $: if ($CablesPatch) {
-    setupUIParamCallbacksAndState($CablesPatch);
-  }
-
+  // Reactive block for handling parameter synchronisation between UI and Host
+  // Executes when the $CablesParams store is valid
+  // and is changing. $CablesParams is currently written during the init callback
+  // events of the Cables patchInitialized() function in CablesUI.svelte
+  // This block sets up the UI to Host parameter communication
   $: {
     if ($CablesParams) {
+      setupUIParamCallbacksAndState($CablesPatch);
       $CablesParams = $CablesParams;
 
       const paramIDs: string[] = getParamIDsFromCablesVars();
@@ -49,7 +51,7 @@
     cablesParamVars.forEach((cablesVar: string) => {
       patch.getVar(cablesVar).on("change", function (newValue: number) {
         // remove the "param_" prefix from the param name
-        // to satisfy a paramId type that the host can match
+        // to satisfy the paramId type reflected in the host
         const paramId = cablesVar.replace("param_", "");
         if ($UpdateStateFSM !== "updatingUI")
           $NativeMessage.requestParamValueUpdate(paramId, newValue);

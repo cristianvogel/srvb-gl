@@ -12,7 +12,8 @@ export type Parameter = {
 export type LocalManifest = {
   window: { width: number; height: number };
   parameters: Parameter[];
-  ui_numberOfNodes: number;
+  NUMBER_NODES: number;
+  NUMBER_PARAMS: number;
 };
 
 //------------- Native Interops -------------------
@@ -23,5 +24,7 @@ export type NativeMessages = {
 };
 
 //------------- Finite States -------------------
-// Define the type for the return of node state machine
-export type NodeState = ReturnType<typeof createNodeStateFSM>;
+
+export interface StatesArrayActions {
+  toggleNode: (nodeId: number, state?: NodeState) => void;
+}

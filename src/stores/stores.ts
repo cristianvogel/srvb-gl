@@ -1,14 +1,17 @@
 declare var globalThis: any;
 
-import { get, writable, type Writable } from "svelte/store";
+import {
+  get,
+  writable,
+  type Readable,
+  type Writable,
+  readable,
+  type Unsubscriber,
+} from "svelte/store";
 
 import { createNodeStateFSM, UpdateStateFSM } from "./fsm";
-import type {
-  Parameter,
-  LocalManifest,
-  NativeMessages,
-  NodeState,
-} from "../../types";
+import type { NodeState } from "./fsm";
+import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 
 //---- Cables  -------------------
 export const CablesPatch: Writable<any> = writable(null);
@@ -20,7 +23,8 @@ export const CablesParams: Writable<any> = writable(null);
 // gets updated
 
 export const manifest: LocalManifest = {
-  ui_numberOfNodes: 36,
+  NUMBER_NODES: 36,
+  NUMBER_PARAMS: 4,
   window: {
     width: 800,
     height: 444,
@@ -58,9 +62,12 @@ export const SourceOfChange: Writable<"ui" | "host" | ""> = writable("");
 
 // create a state machine for each node that will be used to
 // track whether the node is holding stored preset values
-export const UI_StateArray: Writable<NodeState[]> = writable(
-  new Array(manifest.ui_numberOfNodes).fill(null).map(createNodeStateFSM)
+
+export const UI_StateArray: Writable<any[]> = writable(
+  new Array(manifest.NUMBER_NODES).fill(null).map(createNodeStateFSM)
 );
+
+export const CurrentPickedID: Writable<number> = writable(0);
 
 //---- other stuff -------------------
 // a console for debugging or user feedback
@@ -102,7 +109,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       HostState.set(state);
     };
     globalThis.__receiveError__ = function (error: any) {
-      // do something more useful here
+      // do something more useful here?
       ErrorStore.set(error);
     };
   },

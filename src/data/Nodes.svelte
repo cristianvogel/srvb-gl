@@ -1,22 +1,24 @@
 <script lang="ts">
   // Update the Cables patch with the current state of the UI
   // reflected in the UI_StateArray store
-  import { UI_StateArray, CablesPatch } from "../stores/stores";
+  import {
+    UI_StateArray,
+    CablesPatch,
+    CurrentPickedID,
+  } from "../stores/stores";
+  import { get } from "svelte/store";
   type CablesVar = ReturnType<typeof $CablesPatch.getVar>;
 
   export let cablesVarKey: string | CablesVar = "patch_NodeStateArray";
+  let parsedArray = [];
 
   $: {
-    if ($UI_StateArray && $CablesPatch) {
+    if ($UI_StateArray && $CablesPatch && $CurrentPickedID) {
       const cablesVarObject = $CablesPatch.getVar(cablesVarKey);
-      const parsedArray = $UI_StateArray.map((state) =>
-        state === "filled" ? 1 : 0
-      );
+      parsedArray = $UI_StateArray.map((state) => {
+        return get(state) === "empty" ? 0 : 1;
+      });
       cablesVarObject.setValue(parsedArray);
     }
-    console.log(
-      "patch_NodeStateArray: ",
-      $CablesPatch.getVar("patch_NodeStateArray")
-    );
   }
 </script>

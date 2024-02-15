@@ -7,7 +7,7 @@
 import fsm from "svelte-fsm";
 import { SourceOfChange } from "./stores";
 
-interface SetWithDebounce {
+interface Debounced {
   debounce: (delay: number) => void;
 }
 
@@ -21,18 +21,22 @@ export const UpdateStateFSM = fsm("ready", {
   updatingHost: {
     _enter() {
       SourceOfChange.set("ui");
-      (this.set as unknown as SetWithDebounce).debounce(1);
+      (this.set as unknown as Debounced).debounce(1);
     },
     set: "ready",
   },
   updatingUI: {
     _enter() {
       SourceOfChange.set("host");
-      (this.set as unknown as SetWithDebounce).debounce(1);
+      (this.set as unknown as Debounced).debounce(1);
     },
     set: "ready",
   },
 });
+
+//------------- Finite States -------------------
+// Define the type for the return of node state machine
+export type NodeState = ReturnType<typeof createNodeStateFSM>;
 
 export function createNodeStateFSM() {
   return fsm("empty", {
@@ -40,11 +44,24 @@ export function createNodeStateFSM() {
       toggle() {
         return "filled";
       },
+      randomise() {
+        return "randomising";
+      },
     },
     filled: {
       toggle() {
-        return "empty";
+        return "filled"; // feature: a shift toggle, to empty the node?
       },
+      randomise() {
+        return "randomising";
+      },
+    },
+    randomising: {
+      _enter() {
+        (this.flip as unknown as Debounced).debounce(5);
+        console.log("randomising");
+      },
+      flip: Math.random() > 0.5 ? "filled" : "empty",
     },
   });
 }
