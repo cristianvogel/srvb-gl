@@ -1,5 +1,5 @@
-import {Renderer, el} from '@elemaudio/core';
-import {RefMap} from './RefMap';
+import { Renderer, el } from '@elemaudio/core';
+import { RefMap } from './RefMap';
 import srvb from './srvb';
 
 
@@ -38,29 +38,23 @@ function shouldRender(prevState, nextState) {
 globalThis.__receiveStateChange__ = (serializedState) => {
   const state = JSON.parse(serializedState);
 
-  const foldedModulationValue = ( a = state.circleID, b = state.mod) => foldback(a, b);
-
   if (shouldRender(prevState, state)) {
     let stats = core.render(...srvb({
       key: 'srvb',
       sampleRate: state.sampleRate,
-      size: refs.getOrCreate('size', 'const', {value: state.size}, []),
-      decay: refs.getOrCreate('decay', 'const', {value: state.decay}, []),
-      mix: refs.getOrCreate('mix', 'const', {value: state.mix}, []),
-      circleID: refs.getOrCreate('circleID', 'const', {key: 'circle-'+state.circleID, value:  foldedModulationValue() || 0.1}, []),
-      nodeValue: refs.getOrCreate('nodeValue', 'const', {value: state.nodeValue || 0.1}, []),
-      mod: refs.getOrCreate('mod', 'const', {value: state.mod }, []),
-    }, el.in({channel: 0}), el.in({channel: 1})));
+      decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
+      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
+      mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
+      size: refs.getOrCreate('size', 'const', { value: state.size }, []),
+    }, el.in({ channel: 0 }), el.in({ channel: 1 })));
 
     console.log(stats);
   } else {
     console.log('Updating refs');
-    refs.update('size', {value: state.size});
-    refs.update('decay', {value: state.decay});
-    refs.update('mod', {value: state.mod });
-    refs.update('mix', {value: state.mix});
-    refs.update('nodeValue', {value: state.nodeValue});
-    refs.update('circleID', {key: 'circle-'+state.circleID, value: foldedModulationValue()});
+    refs.update('size', { value: state.size });
+    refs.update('decay', { value: state.decay });
+    refs.update('mod', { value: state.mod });
+    refs.update('mix', { value: state.mix });
   }
 
   prevState = state;
@@ -99,4 +93,4 @@ globalThis.__receiveError__ = (err) => {
 
 // folding algorithm from thi.ng lib
 const foldback = (e, x) =>
-	x < -e || x > e ? Math.abs(Math.abs((x - e) % (4 * e)) - 2 * e) - e : x;
+  x < -e || x > e ? Math.abs(Math.abs((x - e) % (4 * e)) - 2 * e) - e : x;
