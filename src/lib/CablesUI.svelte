@@ -12,13 +12,11 @@
     NativeMessage,
     CablesParams,
     manifest,
-    CurrentPickedID,
-    UI_StateArray,
   } from "../stores/stores";
 
   import { onMount } from "svelte";
-  import Console from "./Console.svelte";
   import StateUpdates from "../data/StateUpdates.svelte";
+  import Console from "../lib/Console.svelte";
   import Nodes from "../data/Nodes.svelte";
   import PatchObservers from "../data/PatchObservers.svelte";
   import { get } from "svelte/store";
@@ -111,7 +109,7 @@
 <canvas id="cables_{patch}" width="800" height="474" />
 {#if $CablesParams}
   <StateUpdates />
-  <Nodes cablesVarKey="patch_NodeStateArray" />
+  <Nodes cablesNodeStateArray="patch_NodeStateArray" />
   <PatchObservers />
 {/if}
 <div class="console">

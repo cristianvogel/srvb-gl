@@ -5,7 +5,8 @@
 // performance
 
 import fsm from "svelte-fsm";
-import { SourceOfChange } from "./stores";
+import { SourceOfChange, UI_State } from "./stores";
+import { get } from "svelte/store";
 
 interface Debounced {
   debounce: (delay: number) => void;
@@ -45,7 +46,7 @@ export function createNodeStateFSM() {
         return "filled";
       },
       randomise() {
-        return "randomising";
+        return Math.random() > 0.5 ? "filled" : "empty";
       },
     },
     filled: {
@@ -53,15 +54,11 @@ export function createNodeStateFSM() {
         return "filled"; // feature: a shift toggle, to empty the node?
       },
       randomise() {
-        return "randomising";
+        return Math.random() > 0.5 ? "filled" : "empty";
       },
-    },
-    randomising: {
-      _enter() {
-        (this.flip as unknown as Debounced).debounce(5);
-        console.log("randomising");
+      empty() {
+        return "empty";
       },
-      flip: Math.random() > 0.5 ? "filled" : "empty",
     },
   });
 }

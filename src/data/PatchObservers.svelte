@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   // Reactive handling for Cables observerable var updates
 
   import {
@@ -10,7 +12,9 @@
     UI_StateArray,
   } from "../stores/stores";
 
+  type CablesPatch = typeof $CablesPatch.Patch;
   const { NUMBER_PARAMS } = manifest;
+
   $: {
     if ($CablesPatch) {
       setupCablesPatchObservers($CablesPatch);
@@ -18,7 +22,7 @@
     }
   }
 
-  function setupCablesPatchObservers(patch: any) {
+  function setupCablesPatchObservers(patch: CablesPatch) {
     const paramsAverage = patch.getVar("ui_paramsAverage");
     const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
     const pickedID = patch.getVar("param_pickedID");
@@ -52,7 +56,7 @@
     }
   }
 
-  function setupCablesCallbacks(patch: any) {
+  function setupCablesCallbacks(patch: CablesPatch) {
     // implement node click interaction sent by Cables.op.callback
     patch.config.interactionFromUI = function (params: string[]) {
       $UI_StateArray[$CurrentPickedID].toggle();
@@ -60,9 +64,18 @@
     };
 
     // implement randomise all nodes sent by Cables.op.callback
-    patch.config.randomiseAllNodes = function () {
+    patch.config.randomiseAllNodes = function (params: string[]) {
       $UI_StateArray.forEach((node) => node.randomise());
       $UI_StateArray = $UI_StateArray; // reactive assignment
     };
   }
+
+  function handleShiftClick(event: MouseEvent) {
+    if (event.shiftKey) {
+      $UI_StateArray[$CurrentPickedID].empty();
+      $UI_StateArray = $UI_StateArray; // reactive assignment
+    }
+  }
 </script>
+
+<svelte:window on:click|preventDefault={handleShiftClick} />

@@ -9,12 +9,13 @@
   import { get } from "svelte/store";
   type CablesVar = ReturnType<typeof $CablesPatch.getVar>;
 
-  export let cablesVarKey: string | CablesVar = "patch_NodeStateArray";
-  let parsedArray = [];
+  export let cablesNodeStateArray: string | CablesVar = "patch_NodeStateArray";
+  let parsedArray: number[] = [];
+  $: parsedArray;
 
   $: {
-    if ($UI_StateArray && $CablesPatch && $CurrentPickedID) {
-      const cablesVarObject = $CablesPatch.getVar(cablesVarKey);
+    if ($UI_StateArray && $CablesPatch && parsedArray) {
+      const cablesVarObject = $CablesPatch.getVar(cablesNodeStateArray);
       parsedArray = $UI_StateArray.map((state) => {
         return get(state) === "empty" ? 0 : 1;
       });

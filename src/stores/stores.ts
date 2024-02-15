@@ -1,16 +1,9 @@
 declare var globalThis: any;
 
-import {
-  get,
-  writable,
-  type Readable,
-  type Writable,
-  readable,
-  type Unsubscriber,
-} from "svelte/store";
+import { get, writable, type Writable } from "svelte/store";
 
 import { createNodeStateFSM, UpdateStateFSM } from "./fsm";
-import type { NodeState } from "./fsm";
+
 import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 
 //---- Cables  -------------------
@@ -66,6 +59,16 @@ export const SourceOfChange: Writable<"ui" | "host" | ""> = writable("");
 export const UI_StateArray: Writable<any[]> = writable(
   new Array(manifest.NUMBER_NODES).fill(null).map(createNodeStateFSM)
 );
+
+export const UI_State: Writable<any> = writable({
+  update: () => {
+    // check if UI_StateArray has changed
+    // if so, update the UI_State store
+    const uiStateArray = get(UI_StateArray);
+    const uiState = uiStateArray.map((fsm: any) => fsm.state);
+    UI_State.set(uiState);
+  },
+});
 
 export const CurrentPickedID: Writable<number> = writable(0);
 
