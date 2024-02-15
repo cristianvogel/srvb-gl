@@ -12,12 +12,6 @@ let core = new Renderer((batch) => {
   __postNativeMessage__(JSON.stringify(batch));
 });
 
-// core.on('meter', function(e) {
-//   if (e.source === 'el_meter') {
-//     patch.setVariable('el_meter', e.max);
-//   }
-// });
-
 // Next, a RefMap for coordinating our refs
 let refs = new RefMap(core);
 
@@ -42,10 +36,10 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     let stats = core.render(...srvb({
       key: 'srvb',
       sampleRate: state.sampleRate,
-      decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
-      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
-      mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
+      decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
+      mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
+      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
     }, el.in({ channel: 0 }), el.in({ channel: 1 })));
 
     console.log(stats);
@@ -88,9 +82,3 @@ globalThis.__receiveHydrationData__ = (data) => {
 globalThis.__receiveError__ = (err) => {
   console.log(`[Error: ${err.name}] ${err.message}`);
 };
-
-// additional heper functions added by @NEL
-
-// folding algorithm from thi.ng lib
-const foldback = (e, x) =>
-  x < -e || x > e ? Math.abs(Math.abs((x - e) % (4 * e)) - 2 * e) - e : x;

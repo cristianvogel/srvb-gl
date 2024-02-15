@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import {el} from '@elemaudio/core';
+import { el } from '@elemaudio/core';
 
 
 // A size 8 Hadamard matrix constructed using Numpy and Scipy.
@@ -12,32 +12,32 @@ import {el} from '@elemaudio/core';
 //
 // @see https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.linalg.hadamard.html
 // @see https://nhigham.com/2020/04/10/what-is-a-hadamard-matrix/
-const H8 = [[ 1,  1,  1,  1,  1,  1,  1,  1],
-            [ 1, -1,  1, -1,  1, -1,  1, -1],
-            [ 1,  1, -1, -1,  1,  1, -1, -1],
-            [ 1, -1, -1,  1,  1, -1, -1,  1],
-            [ 1,  1,  1,  1, -1, -1, -1, -1],
-            [ 1, -1,  1, -1, -1,  1, -1,  1],
-            [ 1,  1, -1, -1, -1, -1,  1,  1],
-            [ 1, -1, -1,  1, -1,  1,  1, -1]];
+const H8 = [[1, 1, 1, 1, 1, 1, 1, 1],
+[1, -1, 1, -1, 1, -1, 1, -1],
+[1, 1, -1, -1, 1, 1, -1, -1],
+[1, -1, -1, 1, 1, -1, -1, 1],
+[1, 1, 1, 1, -1, -1, -1, -1],
+[1, -1, 1, -1, -1, 1, -1, 1],
+[1, 1, -1, -1, -1, -1, 1, 1],
+[1, -1, -1, 1, -1, 1, 1, -1]];
 
 // A diffusion step expecting exactly 8 input channels with
 // a maximum diffusion time of 500ms
-function diffuse(size, circleMod, ...ins ) {
+function diffuse(size, ...ins) {
   const len = ins.length;
   const scale = Math.sqrt(1 / len);
 
   invariant(len === 8, "Invalid diffusion step!");
   invariant(typeof size === 'number', "Diffusion step size must be a number");
 
-  const dels = ins.map(function(input, i) {
+  const dels = ins.map(function (input, i) {
     const lineSize = size * ((i + 1) / len);
-    return el.dcblock(el.sdelay({size: lineSize}, input));
+    return el.sdelay({ size: lineSize }, input);
   });
 
-  return H8.map(function(row, i) {
-    return el.add(...row.map(function(col, j) {
-      return el.mul( el.cycle( el.mul(row, circleMod) ), col * scale, dels[j]);
+  return H8.map(function (row, i) {
+    return el.add(...row.map(function (col, j) {
+      return el.mul(col * scale, dels[j]);
     }));
   });
 }
@@ -50,10 +50,10 @@ function diffuse(size, circleMod, ...ins ) {
 // @param {el.const} decay in the range [0, 1]
 // @param {el.const} modDepth in the range [0, 1]
 // @param {...core.Node} ...ins eight input channels
-function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, nodeValue, ...ins) {
+function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
   const len = ins.length;
   const scale = Math.sqrt(1 / len);
-  const md = el.mul(modDepth, circleMod);
+  const md = el.mul(modDepth, 0.02);
 
   if (len !== 8)
     throw new Error("Invalid FDN step!");
@@ -61,42 +61,42 @@ function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, nodeValue, 
   // The unity-gain one pole lowpass here is tuned to taste along
   // the range [0.001, 0.5]. Towards the top of the range, we get into the region
   // of killing the decay time too quickly. Towards the bottom, not much damping.
-  const dels = ins.map(function(input, i) {
+  const dels = ins.map(function (input, i) {
     return el.add(
       input,
       el.mul(
         decay,
         el.smooth(
-          circleMod,
-          el.tapIn({name: `${name}:fdn${i}`}),
+          0.105,
+          el.tapIn({ name: `${name}:fdn${i}` }),
         ),
       ),
     );
   });
 
-  let mix = H8.map(function(row, i) {
-    return el.add(...row.map(function(col, j) {
+  let mix = H8.map(function (row, i) {
+    return el.add(...row.map(function (col, j) {
       return el.mul(col * scale, dels[j]);
     }));
   });
 
-  return mix.map(function(mm, i) {
+  return mix.map(function (mm, i) {
     const modulate = (x, rate, amt) => el.add(x, el.mul(amt, el.cycle(rate)));
     const ms2samps = (ms) => sampleRate * (ms / 1000.0);
 
     // Each delay line here will be ((i + 1) * 17)ms long, multiplied by [1, 4]
     // depending on the size parameter. So at size = 0, delay lines are 17, 34, 51, ...,
     // and at size = 1 we have 68, 136, ..., all in ms here.
-    const delaySize = el.mul(el.add(1.00, el.mul(nodeValue, size)), ms2samps((i + 1) * 17));
+    const delaySize = el.mul(el.add(1.00, el.mul(3, size)), ms2samps((i + 1) * 17));
 
     // Then we modulate the read position for each tap to add some chorus in the
     // delay network.
     const readPos = modulate(delaySize, el.add(0.1, el.mul(i, md)), ms2samps(2.5));
 
     return el.tapOut(
-      {name: `${name}:fdn${i}`},
+      { name: `${name}:fdn${i}` },
       el.delay(
-        {size: ms2samps(750)},
+        { size: ms2samps(750) },
         readPos,
         0,
         mm
@@ -118,21 +118,16 @@ function dampFDN(name, sampleRate, size, decay, modDepth, circleMod, nodeValue, 
 // @param {number} props.mix in [0, 1]
 // @param {core.Node} xl input
 // @param {core.Node} xr input
-// @param {number} props.circleID ( from Cables UI )
-// @param {number} props.nodeValue ( from Cables UI )
-//
-
 export default function srvb(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
 
   const key = props.key;
   const sampleRate = props.sampleRate;
-  const size = el.sm( props.size );
+  const size = el.sm(props.size);
   const decay = el.sm(props.decay);
   const modDepth = el.sm(props.mod);
   const mix = el.sm(props.mix);
-  const circleMod = el.sm(props.circleID);
-  const nodeValue = el.sm(props.nodeValue);
+
   // Upmix to eight channels
   const mid = el.mul(0.5, el.add(xl, xr));
   const side = el.mul(0.5, el.sub(xl, xr));
@@ -142,13 +137,13 @@ export default function srvb(props, xl, xr) {
   // Diffusion
   const ms2samps = (ms) => sampleRate * (ms / 1000.0);
 
-  const d1 = diffuse(ms2samps(37), circleMod , ...eight);
-  const d2 = diffuse(ms2samps(55), circleMod  , ...d1);
-  const d3 = diffuse(ms2samps(137), circleMod , ...d2);
+  const d1 = diffuse(ms2samps(43), ...eight);
+  const d2 = diffuse(ms2samps(97), ...d1);
+  const d3 = diffuse(ms2samps(117), ...d2);
 
   // Reverb network
-  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.04, modDepth,circleMod, nodeValue, ...d3 )
-  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth,circleMod, nodeValue, ...d4 );
+  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.004, modDepth, ...d3)
+  const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth, ...d4);
 
   // Downmix
   //
@@ -158,8 +153,8 @@ export default function srvb(props, xl, xr) {
   // the index, the shorter the delay line. The mix matrix will mostly address this,
   // but if you sum index 0-3 into the left and 4-7 into the right you can definitely
   // hear the energy in the left channel build before the energy in the right.
-  const yl = el.mul( el.min(nodeValue, 0.4) , el.add(r0[0], r0[2], r0[4], r0[6]));
-  const yr = el.mul(el.min(nodeValue, 0.4) , el.add(r0[1], r0[3], r0[5], r0[7]));
+  const yl = el.mul(0.25, el.add(r0[0], r0[2], r0[4], r0[6]));
+  const yr = el.mul(0.25, el.add(r0[1], r0[3], r0[5], r0[7]));
 
   // Wet dry mixing
   return [
