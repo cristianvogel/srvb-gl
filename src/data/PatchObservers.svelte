@@ -11,8 +11,8 @@
     manifest,
     UI_StateArray,
     CablesParams,
+    UpdateStateFSM,
   } from "../stores/stores";
-  import { UpdateStateFSM } from "../stores/fsm";
 
   type CablesPatch = typeof $CablesPatch.Patch;
   const { NUMBER_PARAMS } = manifest;
@@ -28,7 +28,6 @@
   function setupCablesPatchObservers(patch: CablesPatch) {
     const paramsAverage = patch.getVar("ui_paramsAverage");
     const pickedID = patch.getVar("param_pickedID");
-    const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
 
     // inerpolatingPreset is an array of all preset parameters
     // and is interpolated on the Cables side.
@@ -37,6 +36,8 @@
     // Reacting to an array sum as change trigger  ( what if average is 0 🤔 )
     if (paramsAverage) {
       paramsAverage.on("change", function () {
+        const interpolatingPreset = patch.getVar("ui_interpolatingPreset");
+        if (!interpolatingPreset) return;
         const values = interpolatingPreset.getValue();
         if (values && values.length >= NUMBER_PARAMS) {
           const params = $ParamIds;

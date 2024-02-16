@@ -10,12 +10,12 @@
 <style>
   .console {
     position: absolute;
-    font-size: x-small;
+    font-size: small;
     margin-left: 2rem;
     top: 90vh;
     left: 0;
     width: 100vw;
-    height: 16px;
+    height: 24px;
     background-color: transparent;
     color: #aaa;
     overflow: hidden;

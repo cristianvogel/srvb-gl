@@ -5,9 +5,10 @@
     CablesPatch,
     HostState,
     NativeMessage,
+    UpdateStateFSM,
   } from "../stores/stores";
   import { get } from "svelte/store";
-  import { UpdateStateFSM } from "../stores/fsm";
+
   import { equiv } from "@thi.ng/equiv";
 
   // Reactive block for handling parameter synchronisation between UI and Host

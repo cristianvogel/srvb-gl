@@ -1,14 +1,12 @@
 declare var globalThis: any;
 
 import { get, writable, type Writable } from "svelte/store";
-
-import { createNodeStateFSM, UpdateStateFSM } from "./fsm";
-
+import fsm from "svelte-fsm";
 import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 
 //---- Cables  -------------------
-export const CablesPatch: Writable<any> = writable(null);
-export const CablesParams: Writable<any> = writable(null);
+export const CablesPatch: Writable<any> = writable();
+export const CablesParams: Writable<any> = writable();
 // ---- Parameters  -------------------
 // not sure how to import this dynamically at build time
 // and its really only referenced here just be
@@ -27,22 +25,121 @@ export const manifest: LocalManifest = {
     { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    {
-      paramId: "circleID",
-      name: "Circle ID",
-      min: 0,
-      max: 1,
-      defaultValue: 0.5,
-    },
-    {
-      paramId: "nodeValue",
-      name: "Node Value",
-      min: 0.0,
-      max: 1.0,
-      defaultValue: 0.5,
-    },
   ],
 };
+
+// a console for debugging or user feedback
+export const ConsoleText: Writable<string> = writable("Console:");
+
+// Finite   ⤵︎
+// State    ⤵︎
+// Machines ⤵︎
+// ⤵︎ local helper functions and types
+type FSM = ReturnType<typeof fsm>;
+interface Debounced {
+  debounce: (delay: number) => void;
+}
+function debounce(context: FSM, transition: string, delay: number) {
+  (context[transition] as unknown as Debounced).debounce(delay);
+  //console.count("debounce function");
+}
+
+// ⤵︎ Machine for handling UI to Host communication
+export const UpdateStateFSM = fsm("ready", {
+  ready: {
+    updateFrom(src) {
+      if (src === "ui") return "updatingUI";
+      if (src === "host") return "updatingHost";
+    },
+  },
+  updatingHost: {
+    _enter() {
+      SourceOfChange.set("ui");
+      (this.set as unknown as Debounced).debounce(1.5);
+    },
+    set: "ready",
+  },
+  updatingUI: {
+    _enter() {
+      SourceOfChange.set("host");
+      (this.set as unknown as Debounced).debounce(3);
+    },
+    set: "ready",
+  },
+});
+
+// ⤵︎ Factory function for making Machines that manage state of presets in the GUI
+export const createNodeStateFSM = function (): FSM {
+  return fsm("empty", {
+    empty: {
+      toggle() {
+        return "filled";
+      },
+      randomise() {
+        return Math.random() > 0.5 ? "filled" : "empty";
+      },
+    },
+    filled: {
+      toggle() {
+        return "filled"; // feature: a shift toggle, to empty the node?
+      },
+      randomise() {
+        return Math.random() > 0.5 ? "filled" : "empty";
+      },
+      empty() {
+        return "empty";
+      },
+    },
+  });
+};
+
+// ⤵︎ Machine for Console Text
+
+let count = 0;
+let duration = 3000;
+const prompts = [
+  `Initializing grid with ${manifest.NUMBER_NODES} nodes of ${manifest.NUMBER_PARAMS} parameters.`,
+  "Store some presets.",
+  "Morph between them.",
+  "Ready.",
+];
+
+function enterPrompt(this: FSM) {
+  ConsoleText.set(prompts[count++]);
+  debounce(this, "next", duration);
+}
+
+export const ConsoleFSM = fsm("start", {
+  start: {
+    _enter: enterPrompt,
+    next: "prompt_2",
+  },
+  prompt_2: {
+    _enter: enterPrompt,
+    next: "prompt_3",
+  },
+  prompt_3: {
+    _enter: enterPrompt,
+    next: "finish",
+  },
+  finish: {
+    _enter() {
+      count = prompts.length;
+      ConsoleText.set(prompts.at(-1) as string);
+    },
+    reset() {
+      count = 0;
+      return "start";
+    },
+  },
+  "*": {
+    // default
+    enter() {
+      count = 0;
+      ConsoleText.set("NEL");
+    },
+  },
+});
 
 // ---- state synchronisation -------------------
 export const HostState: Writable<any> = writable();
@@ -73,8 +170,7 @@ export const UI_State: Writable<any> = writable({
 export const CurrentPickedID: Writable<number> = writable(0);
 
 //---- other stuff -------------------
-// a console for debugging or user feedback
-export const ConsoleText: Writable<string> = writable("Console:");
+
 export const PixelDensity: Writable<number> = writable(2);
 
 //---- audio parameters -------------------
@@ -96,7 +192,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       typeof globalThis.__postNativeMessage__ === "function" &&
       get(UpdateStateFSM) !== "updatingUI"
     ) {
-      UpdateStateFSM.update("host");
+      UpdateStateFSM.updateFrom("host");
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
         value,
@@ -108,7 +204,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
     globalThis.__receiveStateChange__ = function (state: any) {
       PreviousHostState.set(get(HostState));
       // trigger FSM transition
-      UpdateStateFSM.update("ui");
+      UpdateStateFSM.updateFrom("ui");
       HostState.set(state);
     };
     globalThis.__receiveError__ = function (error: any) {

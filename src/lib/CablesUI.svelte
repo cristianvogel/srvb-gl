@@ -8,22 +8,36 @@
   import {
     CablesPatch,
     PixelDensity,
-    ConsoleText,
     NativeMessage,
     CablesParams,
     manifest,
   } from "../stores/stores";
 
   import { onMount } from "svelte";
-  import StateUpdates from "../data/StateUpdates.svelte";
+  import { fade } from "svelte/transition";
+  import ParamUpdates from "../data/ParamUpdates.svelte";
   import Console from "../lib/Console.svelte";
   import Nodes from "../data/Nodes.svelte";
   import PatchObservers from "../data/PatchObservers.svelte";
   import { get } from "svelte/store";
+  import { ConsoleText, ConsoleFSM } from "../stores/stores";
 
   // component props
   export let patch: string;
 
+  let showConsole: boolean;
+  $: showConsole = true;
+
+  // reactive
+  $: {
+    if ($ConsoleText !== "") {
+      showConsole = true;
+      setTimeout(() => {
+        $ConsoleText = "";
+        showConsole = false;
+      }, 5000); // Clear the console after 5000 milliseconds (5 seconds)
+    }
+  }
   // local variables
   let pathPatch: string = `/${patch}/patch.js`;
   const { NUMBER_NODES, NUMBER_PARAMS } = manifest;
@@ -89,15 +103,7 @@
   }
   // Cables patch initialized, set up interop bindings
   // prepare for connecting patch vars to Elementary native
-  function patchInitialized(patch: any) {
-    // get all the variables from the Cables patch
-    $ConsoleText =
-      "Initialised with " +
-      NUMBER_NODES +
-      " nodes for storing " +
-      NUMBER_PARAMS +
-      " parameters.";
-  }
+  function patchInitialized(patch: any) {}
   // called when the patch is finished loading
   function patchFinishedLoading() {
     $CablesParams = $CablesPatch.getVars();
@@ -107,14 +113,16 @@
 </script>
 
 <canvas id="cables_{patch}" width="800" height="474" />
-{#if $CablesParams}
-  <StateUpdates />
+{#if $CablesParams && $CablesPatch}
+  <ParamUpdates />
   <Nodes cablesNodeStateArray="patch_NodeStateArray" />
   <PatchObservers />
 {/if}
-<div class="console">
-  <Console message={$ConsoleText} />
-</div>
+{#if showConsole && $ConsoleFSM}
+  <div class="console" transition:fade>
+    <Console message={$ConsoleText} />
+  </div>
+{/if}
 
 <style>
   .console {

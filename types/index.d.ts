@@ -28,3 +28,5 @@ export type NativeMessages = {
 export interface StatesArrayActions {
   toggleNode: (nodeId: number, state?: NodeState) => void;
 }
+
+export type NodeState = ReturnType<typeof createNodeStateFSM>;
