@@ -7,10 +7,11 @@ import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 //---- Cables  -------------------
 export const CablesPatch: Writable<any> = writable();
 export const CablesParams: Writable<any> = writable();
-// ---- Parameters  -------------------
-// not sure how to import this dynamically at build time
-// and its really only referenced here just be
-// sure to make it reflect public/manifest.json if that
+
+// reference to public/Manifest.json
+// used by the native side for audio updates
+// not sure how to import this dynamically at build time!
+// Also sure to make it reflect public/manifest.json if that
 // gets updated
 
 export const manifest: LocalManifest = {
@@ -20,11 +21,14 @@ export const manifest: LocalManifest = {
     width: 800,
     height: 444,
   },
+  // ---- Parameters  -------------------
+  // The order of Entries in the parameters object her
+  // should match the order of the parameters in the UI (not the host)
   parameters: [
-    { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5 },
+    { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 1.0 },
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 0.5 },
+    { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
   ],
 };
 
@@ -48,21 +52,19 @@ function debounce(context: FSM, transition: string, delay: number) {
 export const UpdateStateFSM = fsm("ready", {
   ready: {
     updateFrom(src) {
-      if (src === "ui") return "updatingUI";
-      if (src === "host") return "updatingHost";
+      if (src === "host") return "updatingUI";
+      if (src === "ui") return "updatingHost";
     },
   },
   updatingHost: {
     _enter() {
-      SourceOfChange.set("ui");
-      (this.set as unknown as Debounced).debounce(1.5);
+      (this.set as unknown as Debounced).debounce(2);
     },
     set: "ready",
   },
   updatingUI: {
     _enter() {
-      SourceOfChange.set("host");
-      (this.set as unknown as Debounced).debounce(3);
+      (this.set as unknown as Debounced).debounce(1);
     },
     set: "ready",
   },
@@ -131,24 +133,15 @@ export const ConsoleFSM = fsm("start", {
       count = 0;
       return "start";
     },
-  },
-  "*": {
-    // default
-    enter() {
-      count = 0;
-      ConsoleText.set("NEL");
+    log(msg) {
+      ConsoleText.set(msg);
     },
   },
 });
 
 // ---- state synchronisation -------------------
 export const HostState: Writable<any> = writable();
-export const PreviousHostState: Writable<any> = writable(); // todo: check if this is actually being used
 export const ErrorStore: Writable<any> = writable();
-
-// flag set inside the UpdateStateFSM state machine,
-// used to prevent circular update loops between host and UI
-export const SourceOfChange: Writable<"ui" | "host" | ""> = writable("");
 
 // create a state machine for each node that will be used to
 // track whether the node is holding stored preset values
@@ -192,7 +185,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       typeof globalThis.__postNativeMessage__ === "function" &&
       get(UpdateStateFSM) !== "updatingUI"
     ) {
-      UpdateStateFSM.updateFrom("host");
+      UpdateStateFSM.updateFrom("ui");
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
         value,
@@ -202,9 +195,8 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   // register messages from the host
   registerMessagesFromHost: function () {
     globalThis.__receiveStateChange__ = function (state: any) {
-      PreviousHostState.set(get(HostState));
       // trigger FSM transition
-      UpdateStateFSM.updateFrom("ui");
+      UpdateStateFSM.updateFrom("host");
       HostState.set(state);
     };
     globalThis.__receiveError__ = function (error: any) {

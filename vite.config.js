@@ -11,8 +11,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 function pubDirReloadPlugin() {
   return {
     name: 'pubDirReload',
-    handleHotUpdate({file, modules, server}) {
-      if (file.includes('public/dsp.main.js')) {
+    handleHotUpdate({ file, modules, server }) {
+      if (file.includes('public/dsp.main.js' || 'public/nel-vcs-24/js/patch.js')) {
         server.ws.send({
           type: 'custom',
           event: 'reload-dsp',
@@ -27,5 +27,11 @@ function pubDirReloadPlugin() {
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
-  plugins: [ svelte(), pubDirReloadPlugin() ],
+  plugins: [svelte(), pubDirReloadPlugin()],
+  server: {
+    watch: {
+      // The paths to be added to the watch list
+      include: ['public/nel-vcs-24/js/patch.js'],
+    }
+  }
 })

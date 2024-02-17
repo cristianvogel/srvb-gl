@@ -41,9 +41,23 @@
         const values = interpolatingPreset.getValue();
         if (values && values.length >= NUMBER_PARAMS) {
           const params = $ParamIds;
+
+          // Create an array of [paramId, value] pairs
+          const pairs = params.map((param, i) => [param, values[i]]);
+
+          // Filter out 'pickedID', sort the pairs, and map to get only the values
+          const sortedValues = pairs
+            .sort(([paramIdA], [paramIdB]) => paramIdA.localeCompare(paramIdB))
+            .map(([paramId, value]) => value);
+
+          // Update the parameters with the sorted values
           for (let i = 0; i < NUMBER_PARAMS; i++) {
-            if (values[i] !== undefined && params[i] !== undefined) {
-              $NativeMessage.requestParamValueUpdate(params[i], values[i]);
+            if (sortedValues[i] !== undefined && params[i] !== undefined) {
+              //console.log("updating param", params[i], sortedValues[i]);
+              $NativeMessage.requestParamValueUpdate(
+                params[i],
+                sortedValues[i]
+              );
             }
           }
         }

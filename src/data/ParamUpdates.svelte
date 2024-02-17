@@ -3,6 +3,7 @@
   import {
     CablesParams,
     CablesPatch,
+    ConsoleFSM,
     HostState,
     NativeMessage,
     UpdateStateFSM,
@@ -22,13 +23,11 @@
       // go through and set all the param_ Sidebar vars in the cables patch
       if (paramIDs) {
         for (const pid of paramIDs) {
+          console.log("setting up param_" + pid + " from " + paramIDs);
           if (!$HostState) break;
           const cablesVarName = "param_" + pid;
           const parsedHostState = JSON.parse($HostState);
-          if (
-            $UpdateStateFSM === "updatingUI" &&
-            !equiv($CablesPatch.getVar(cablesVarName), parsedHostState[pid])
-          ) {
+          if ($UpdateStateFSM === "updatingUI") {
             $CablesPatch.setVariable(cablesVarName, parsedHostState[pid]);
           }
         }
@@ -38,7 +37,7 @@
 
   function getParamIDsFromCablesVars(): string[] {
     return Object.keys($CablesParams)
-      .filter((k) => k.startsWith("param_"))
+      .filter((k) => k.startsWith("param_") && k !== "param_pickedID")
       .map((k) => k.replace("param_", ""));
   }
 
