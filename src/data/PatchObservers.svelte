@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-
   // Reactive handling for Cables observerable var updates
 
   import {
@@ -12,6 +10,8 @@
     UI_StateArray,
     CablesParams,
     UpdateStateFSM,
+    LocksStore,
+    type LocksStoreEntry,
   } from "../stores/stores";
 
   type CablesPatch = typeof $CablesPatch.Patch;
@@ -54,6 +54,7 @@
           for (let i = 0; i < NUMBER_PARAMS; i++) {
             if (sortedValues[i] !== undefined && params[i] !== undefined) {
               //console.log("updating param", params[i], sortedValues[i]);
+
               $NativeMessage.requestParamValueUpdate(
                 params[i],
                 sortedValues[i]
@@ -107,6 +108,11 @@
         // remove the "param_" prefix from the param name
         // to satisfy the paramId type reflected in the host
         const paramId = cablesVar.replace("param_", "");
+        if (paramId === "pickedID") return; // need to think about whether pickedId will be used in host
+        console.log("updating param", paramId, newValue);
+        console.log("LocksStore", $LocksStore);
+        if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
+
         if ($UpdateStateFSM !== "updatingUI")
           $NativeMessage.requestParamValueUpdate(paramId, newValue);
       });

@@ -31,6 +31,7 @@ WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &asset
     : juce::AudioProcessorEditor(proc)
 {
     setSize(800, 494);
+    setResizable(true, true);
 
     choc::ui::WebView::Options opts;
 

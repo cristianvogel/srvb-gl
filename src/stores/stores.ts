@@ -1,6 +1,12 @@
 declare var globalThis: any;
 
-import { get, writable, type Writable } from "svelte/store";
+import {
+  get,
+  readable,
+  writable,
+  type Readable,
+  type Writable,
+} from "svelte/store";
 import fsm from "svelte-fsm";
 import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 
@@ -39,7 +45,7 @@ export const ConsoleText: Writable<string> = writable("Console:");
 // State    ⤵︎
 // Machines ⤵︎
 // ⤵︎ local helper functions and types
-type FSM = ReturnType<typeof fsm>;
+export type FSM = ReturnType<typeof fsm>;
 interface Debounced {
   debounce: (delay: number) => void;
 }
@@ -47,6 +53,26 @@ function debounce(context: FSM, transition: string, delay: number) {
   (context[transition] as unknown as Debounced).debounce(delay);
   //console.count("debounce function");
 }
+
+// ⤵︎ Factory object for simple toggle to lock a parameter in the UI
+export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
+
+const icon: any = get(LockIcon);
+export const createLockFSM = function (): FSM {
+  //@ts-ignore
+  return fsm(icon.OPEN, {
+    [icon.LOCKED]: {
+      toggle(): string {
+        return icon.OPEN;
+      },
+    },
+    [icon.OPEN]: {
+      toggle(): string {
+        return icon.LOCKED;
+      },
+    },
+  });
+};
 
 // ⤵︎ Machine for handling UI to Host communication
 export const UpdateStateFSM = fsm("ready", {
@@ -143,6 +169,10 @@ export const ConsoleFSM = fsm("start", {
 export const HostState: Writable<any> = writable();
 export const ErrorStore: Writable<any> = writable();
 
+export interface LocksStoreEntry {
+  [key: string]: number;
+}
+
 // create a state machine for each node that will be used to
 // track whether the node is holding stored preset values
 
@@ -175,6 +205,14 @@ export const ParamIds: Writable<string[]> = writable(
   manifest.parameters.map((p: Parameter) => p.paramId)
 );
 
+// specify an empty object with valid param keys for the locks store
+// otherwise the UI will break
+const emptyLocksObject: LocksStoreEntry = {};
+for (const paramId of get(ParamIds)) {
+  emptyLocksObject[paramId] = 0;
+}
+export const LocksStore: Writable<{}> = writable(emptyLocksObject);
+
 // ---- native interops -------------------
 
 export const NativeMessage: Writable<NativeMessages> = writable({
@@ -186,6 +224,8 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       get(UpdateStateFSM) !== "updatingUI"
     ) {
       UpdateStateFSM.updateFrom("ui");
+      //@ts-ignore
+      //if (get(LocksStore)[paramId] === get(LockIcon).LOCKED) return;
       globalThis.__postNativeMessage__("setParameterValue", {
         paramId,
         value,

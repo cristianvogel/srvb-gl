@@ -21,6 +21,7 @@
   import PatchObservers from "../data/PatchObservers.svelte";
   import { get } from "svelte/store";
   import { ConsoleText, ConsoleFSM } from "../stores/stores";
+  import ParameterLock from "./ParameterLock.svelte";
 
   // component props
   export let patch: string;
@@ -49,21 +50,24 @@
     $PixelDensity = window.devicePixelRatio || 1;
     console.log("Using PixelDensity: ", $PixelDensity);
 
-    // embed the Cables patch into the HTML
-    try {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "/nel-vcs-24/js/patch.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      }).then(() => {
-        initializeCables();
-      });
-    } catch (error) {
-      console.error("Error loading Cables Patch", error);
+    if (typeof CABLES === "undefined") {
+      // embed the Cables patch into the HTML
+      try {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "/nel-vcs-24/js/patch.js";
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        }).then(() => {
+          initializeCables();
+        });
+      } catch (error) {
+        console.error("Error loading Cables Patch", error);
+      }
     }
   });
+
   // 📌 move Cables assets folder up to /public or they don't get found
   const initializeCables = () => {
     console.log("Running Cables init...");
@@ -83,7 +87,8 @@
         },
         canvas: { alpha: true, premultipliedAlpha: true },
         variables: {
-          // overrides initial values of vars coming from the Cables patch
+          // overrides for initial values of vars coming from the Cables patch
+          ui_parameterLocks: new Array(NUMBER_PARAMS).fill(0),
           // Initialise patch_NodeStateArray
           // todo: restore a saved state? Should all empty be the default init?
           patch_NodeStateArray: new Array(NUMBER_NODES).fill(0),
@@ -117,6 +122,7 @@
   <ParamUpdates />
   <Nodes cablesNodeStateArray="patch_NodeStateArray" />
   <PatchObservers />
+  <ParameterLock />
 {/if}
 {#if showConsole && $ConsoleFSM}
   <div class="console" transition:fade>

@@ -3,14 +3,11 @@
   import {
     CablesParams,
     CablesPatch,
-    ConsoleFSM,
     HostState,
     NativeMessage,
     UpdateStateFSM,
   } from "../stores/stores";
   import { get } from "svelte/store";
-
-  import { equiv } from "@thi.ng/equiv";
 
   // Reactive block for handling parameter synchronisation between UI and Host
   // Executes when the $CablesParams store is valid
