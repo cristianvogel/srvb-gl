@@ -91,7 +91,13 @@ EffectsPluginProcessor::~EffectsPluginProcessor()
 //==============================================================================
 juce::AudioProcessorEditor* EffectsPluginProcessor::createEditor()
 {
-    return new WebViewEditor(this, getAssetsDirectory(), 800, 704);
+    auto * editor = new WebViewEditor(this, getAssetsDirectory(), 800, 704);
+    editor->viewStateChanged = [this](choc::value::Value& v) {
+        DBG("View State Changed " + v.toString());
+        state.insert_or_assign("viewState", v.toString());
+        triggerAsyncUpdate();
+    };
+    return editor;
 }
 
 bool EffectsPluginProcessor::hasEditor() const
