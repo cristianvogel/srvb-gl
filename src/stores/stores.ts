@@ -10,6 +10,53 @@ import {
 import fsm from "svelte-fsm";
 import type { Parameter, LocalManifest, NativeMessages } from "../../types";
 
+// ---- native interops -------------------
+
+export const NativeMessage: Writable<NativeMessages> = writable({
+  // store any persistent UI state in the host
+  // serialisation happens here
+  setViewState: function (value: any) {
+    if (typeof globalThis.__postNativeMessage__ === "function") {
+      console.log("sending view state to host", JSON.stringify(value));
+      globalThis.__postNativeMessage__("setViewState", JSON.stringify(value));
+    }
+  },
+  // update parameter values in the host
+  requestParamValueUpdate: function (paramId: string, value: number) {
+    // trigger FSM transition
+    if (
+      typeof globalThis.__postNativeMessage__ === "function" &&
+      get(UpdateStateFSM) !== "updatingUI"
+    ) {
+      UpdateStateFSM.updateFrom("ui");
+      //@ts-ignore
+      globalThis.__postNativeMessage__("setParameterValue", {
+        paramId,
+        value,
+      });
+    }
+  },
+  // register messages sent from the host
+  registerMessagesFromHost: function () {
+    globalThis.__receiveStateChange__ = function (state: any) {
+      // trigger FSM transition
+      UpdateStateFSM.updateFrom("host");
+      // then deserialize and store the received state
+      HostState.set(JSON.parse(state)); // 📌 deserialization is essential!
+    };
+    globalThis.__receiveError__ = function (error: any) {
+      // do something more useful here?
+      ErrorStore.set(error);
+    };
+  },
+  // send a ready message to the host
+  requestReady: function () {
+    if (typeof globalThis.__postNativeMessage__ === "function") {
+      globalThis.__postNativeMessage__("ready", {});
+    }
+  },
+});
+
 //---- Cables  -------------------
 export const CablesPatch: Writable<any> = writable();
 export const CablesParams: Writable<any> = writable();
@@ -20,8 +67,9 @@ export const CablesParams: Writable<any> = writable();
 // Also sure to make it reflect public/manifest.json if that
 // gets updated
 
+const NUMBER_NODES = 36;
 export const manifest: LocalManifest = {
-  NUMBER_NODES: 36,
+  NUMBER_NODES,
   NUMBER_PARAMS: 4,
   window: {
     width: 800,
@@ -36,6 +84,7 @@ export const manifest: LocalManifest = {
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
   ],
+  viewState: new Array(NUMBER_NODES).fill(0),
 };
 
 // a console for debugging or user feedback
@@ -97,8 +146,8 @@ export const UpdateStateFSM = fsm("ready", {
 });
 
 // ⤵︎ Factory function for making Machines that manage state of presets in the GUI
-export const createNodeStateFSM = function (): FSM {
-  return fsm("empty", {
+export function createNodeStateFSM(initial: "empty" | "filled" = "empty"): FSM {
+  return fsm(initial, {
     empty: {
       toggle() {
         return "filled";
@@ -119,7 +168,7 @@ export const createNodeStateFSM = function (): FSM {
       },
     },
   });
-};
+}
 
 // ⤵︎ Machine for Console Text
 
@@ -166,7 +215,10 @@ export const ConsoleFSM = fsm("start", {
 });
 
 // ---- state synchronisation -------------------
+
+// custom store that holds received host state
 export const HostState: Writable<any> = writable();
+
 export const ErrorStore: Writable<any> = writable();
 
 export interface LocksStoreEntry {
@@ -176,19 +228,16 @@ export interface LocksStoreEntry {
 // create a state machine for each node that will be used to
 // track whether the node is holding stored preset values
 
-export const UI_StateArray: Writable<any[]> = writable(
-  new Array(manifest.NUMBER_NODES).fill(null).map(createNodeStateFSM)
-);
+export const UI_StateArrayFSMs: Writable<any> = writable();
+// will be filled with initialising constructor
 
-export const UI_State: Writable<any> = writable({
-  update: () => {
-    // check if UI_StateArray has changed
-    // if so, update the UI_State store
-    const uiStateArray = get(UI_StateArray);
-    const uiState = uiStateArray.map((fsm: any) => fsm.state);
-    UI_State.set(uiState);
+export const UI_ParsedStates: Writable<any> = writable({
+  parsed: () => {
+    // will parse the string output of the FSM to 0 1 array
   },
 });
+
+export const StoredPresets = writable(); // not used yet
 
 export const CurrentPickedID: Writable<number> = writable(0);
 
@@ -212,42 +261,3 @@ for (const paramId of get(ParamIds)) {
   emptyLocksObject[paramId] = 0;
 }
 export const LocksStore: Writable<{}> = writable(emptyLocksObject);
-
-// ---- native interops -------------------
-
-export const NativeMessage: Writable<NativeMessages> = writable({
-  requestParamValueUpdate: function (paramId: string, value: number) {
-    // trigger FSM transition
-
-    if (
-      typeof globalThis.__postNativeMessage__ === "function" &&
-      get(UpdateStateFSM) !== "updatingUI"
-    ) {
-      UpdateStateFSM.updateFrom("ui");
-      //@ts-ignore
-      //if (get(LocksStore)[paramId] === get(LockIcon).LOCKED) return;
-      globalThis.__postNativeMessage__("setParameterValue", {
-        paramId,
-        value,
-      });
-    }
-  },
-  // register messages from the host
-  registerMessagesFromHost: function () {
-    globalThis.__receiveStateChange__ = function (state: any) {
-      // trigger FSM transition
-      UpdateStateFSM.updateFrom("host");
-      HostState.set(state);
-    };
-    globalThis.__receiveError__ = function (error: any) {
-      // do something more useful here?
-      ErrorStore.set(error);
-    };
-  },
-  requestReady: function () {
-    // send a message to the host
-    if (typeof globalThis.__postNativeMessage__ === "function") {
-      globalThis.__postNativeMessage__("ready", {});
-    }
-  },
-});

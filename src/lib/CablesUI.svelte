@@ -11,6 +11,8 @@
     NativeMessage,
     CablesParams,
     manifest,
+    HostState,
+    UI_StateArrayFSMs,
   } from "../stores/stores";
 
   import { onMount } from "svelte";
@@ -45,32 +47,30 @@
 
   // on mount, load the Cables patch into the HTML
   onMount(async () => {
-    // put the device pixel density into a store if needed
-    // to scale mouse movement for (non) high DPI displays (not implemented yet)
-    $PixelDensity = window.devicePixelRatio || 1;
-    console.log("Using PixelDensity: ", $PixelDensity);
+    // patch is loading, notify the host
+    $NativeMessage.requestReady();
+    $NativeMessage.registerMessagesFromHost();
 
-    if (typeof CABLES === "undefined") {
-      // embed the Cables patch into the HTML
-      try {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "/nel-vcs-24/js/patch.js";
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        }).then(() => {
-          initializeCables();
-        });
-      } catch (error) {
-        console.error("Error loading Cables Patch", error);
-      }
+    // embed the Cables patch into the HTML
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/nel-vcs-24/js/patch.js";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      }).then(() => {
+        initializeCables();
+      });
+    } catch (error) {
+      console.error("Error loading Cables Patch", error);
     }
   });
 
   // 📌 move Cables assets folder up to /public or they don't get found
   const initializeCables = () => {
     console.log("Running Cables init...");
+
     CablesPatch.set(
       new CABLES.Patch({
         patch: CABLES.exportedPatch,
@@ -91,12 +91,9 @@
           ui_parameterLocks: new Array(NUMBER_PARAMS).fill(0),
           // Initialise patch_NodeStateArray
           // todo: restore a saved state? Should all empty be the default init?
-          patch_NodeStateArray: new Array(NUMBER_NODES).fill(0),
+          // patch_NodeStateArray: new Array(NUMBER_NODES).fill(0),
           // initialise Array of arrays, 36 nodes, 4 params
           // todo: restore a saved state? Should all empty be the default init?
-          patch_storedPresets: new Array(NUMBER_NODES)
-            .fill(null)
-            .map(() => new Array(manifest.NUMBER_PARAMS).fill(0.5)),
         },
       })
     );
@@ -112,8 +109,6 @@
   // called when the patch is finished loading
   function patchFinishedLoading() {
     $CablesParams = $CablesPatch.getVars();
-    // patch is ready, notify the host
-    $NativeMessage.requestReady();
   }
 </script>
 

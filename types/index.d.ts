@@ -14,10 +14,13 @@ export type LocalManifest = {
   parameters: Parameter[];
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
+  sampleRate?: number;
+  viewState?: any;
 };
 
 //------------- Native Interops -------------------
 export type NativeMessages = {
+  setViewState(value: any);
   requestParamValueUpdate(paramId: string, value: number): void;
   registerMessagesFromHost(): void;
   requestReady(): void;

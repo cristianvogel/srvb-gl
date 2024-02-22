@@ -4,30 +4,32 @@
     CablesParams,
     CablesPatch,
     HostState,
-    NativeMessage,
     UpdateStateFSM,
+    createNodeStateFSM,
+    manifest,
+    type FSM,
+    UI_ParsedStates,
+    UI_StateArrayFSMs,
   } from "../stores/stores";
   import { get } from "svelte/store";
 
   // Reactive block for handling parameter synchronisation between UI and Host
-  // Executes when the $CablesParams store is valid
   // This block sets up the UI to Host parameter communication that hopefully
   // won't clash with each other
   $: {
-    if ($CablesParams) {
-      const paramIDs: string[] = getParamIDsFromCablesVars();
-
-      // go through and set all the param_ Sidebar vars in the cables patch
-      if (paramIDs) {
-        for (const pid of paramIDs) {
-          console.log("setting up param_" + pid + " from " + paramIDs);
-          if (!$HostState) break;
-          const cablesVarName = "param_" + pid;
-          const parsedHostState = JSON.parse($HostState);
+    const paramIDs: string[] = getParamIDsFromCablesVars();
+    // go through and set all the param_ Sidebar vars in the cables patch
+    if (paramIDs) {
+      for (const pid of paramIDs) {
+        if (!$HostState) break;
+        const cablesVarName = "param_" + pid;
+        try {
+          //  console.log("param -> " + pid);
+          const parsedHostState = $HostState;
           if ($UpdateStateFSM === "updatingUI") {
             $CablesPatch.setVariable(cablesVarName, parsedHostState[pid]);
           }
-        }
+        } catch (e) {}
       }
     }
   }
@@ -38,8 +40,29 @@
       .map((k) => k.replace("param_", ""));
   }
 
+  let viewState: number[];
+  $: viewState = $HostState.viewState || new Array(36).fill(0);
+
+  function statesArrayStoreInit() {
+    let arr: FSM[] = new Array(manifest.NUMBER_NODES).fill(null);
+    // HostState.viewState is never ready here
+    for (let i = 0; i < manifest.NUMBER_NODES; i++) {
+      const startingState: number = viewState ? viewState[i] : 0;
+      arr[i] = createNodeStateFSM(
+        ["empty", "filled"].at(startingState) as "empty" | "filled" | undefined
+      );
+    }
+
+    $UI_StateArrayFSMs = arr;
+
+    $UI_ParsedStates.parsed = () => {
+      return $UI_StateArrayFSMs.map((state: any) => {
+        return get(state) === "empty" ? 0 : 1;
+      });
+    };
+  }
+
   onMount(() => {
-    // add functionality to receive parameter update messages from the host
-    get(NativeMessage).registerMessagesFromHost();
+    statesArrayStoreInit();
   });
 </script>

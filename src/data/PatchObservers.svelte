@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   // Reactive handling for Cables observerable var updates
 
   import {
@@ -7,25 +9,26 @@
     NativeMessage,
     CurrentPickedID,
     manifest,
-    UI_StateArray,
+    UI_StateArrayFSMs,
     CablesParams,
     UpdateStateFSM,
     LocksStore,
     type LocksStoreEntry,
+    ConsoleText,
+    UI_ParsedStates,
   } from "../stores/stores";
 
   type CablesPatch = typeof $CablesPatch.Patch;
   const { NUMBER_PARAMS } = manifest;
 
-  $: {
-    if ($CablesPatch) {
-      setupUIParamCallbacks($CablesPatch);
-      setupCablesPatchObservers($CablesPatch);
-      setupCablesCallbacks($CablesPatch);
-    }
-  }
+  onMount(() => {
+    setupUIParamCallbacks($CablesPatch);
+    setupCablesPatchObservers($CablesPatch);
+    setupCablesCallbacks($CablesPatch);
+  });
 
   function setupCablesPatchObservers(patch: CablesPatch) {
+    console.log("setup Cables Patch Observers...you should only see this once");
     const paramsAverage = patch.getVar("ui_paramsAverage");
     const pickedID = patch.getVar("param_pickedID");
 
@@ -53,8 +56,12 @@
           // Update the parameters with the sorted values
           for (let i = 0; i < NUMBER_PARAMS; i++) {
             if (sortedValues[i] !== undefined && params[i] !== undefined) {
-              //console.log("updating param", params[i], sortedValues[i]);
-
+              // console.log(
+              //   "requesting update-> ",
+              //   params[i],
+              //   " : ",
+              //   sortedValues[i]
+              // );
               $NativeMessage.requestParamValueUpdate(
                 params[i],
                 sortedValues[i]
@@ -71,6 +78,7 @@
     if (pickedID) {
       pickedID.on("change", function (id: number) {
         $CurrentPickedID = id;
+        $NativeMessage.setViewState($UI_ParsedStates.parsed());
       });
     }
   }
@@ -78,21 +86,21 @@
   function setupCablesCallbacks(patch: CablesPatch) {
     // implement node click interaction sent by Cables.op.callback
     patch.config.interactionFromUI = function (params: string[]) {
-      $UI_StateArray[$CurrentPickedID].toggle();
-      $UI_StateArray = $UI_StateArray; // reactive assignment
+      $UI_StateArrayFSMs[$CurrentPickedID].toggle();
+      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
     };
 
     // implement randomise all nodes sent by Cables.op.callback
     patch.config.randomiseAllNodes = function (params: string[]) {
-      $UI_StateArray.forEach((node) => node.randomise());
-      $UI_StateArray = $UI_StateArray; // reactive assignment
+      $UI_StateArrayFSMs.forEach((node) => node.randomise());
+      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
     };
   }
 
   function handleShiftClick(event: MouseEvent) {
     if (event.shiftKey) {
-      $UI_StateArray[$CurrentPickedID].empty();
-      $UI_StateArray = $UI_StateArray; // reactive assignment
+      $UI_StateArrayFSMs[$CurrentPickedID].empty();
+      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
     }
   }
 
@@ -109,8 +117,8 @@
         // to satisfy the paramId type reflected in the host
         const paramId = cablesVar.replace("param_", "");
         if (paramId === "pickedID") return; // need to think about whether pickedId will be used in host
-        console.log("updating param", paramId, newValue);
-        console.log("LocksStore", $LocksStore);
+        //console.log("updating param", paramId, newValue);
+        //console.log("LocksStore", $LocksStore);
         if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
 
         if ($UpdateStateFSM !== "updatingUI")
