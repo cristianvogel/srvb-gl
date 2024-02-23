@@ -1,0 +1,110 @@
+<script lang="ts">
+  import { T } from "@threlte/core";
+  import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
+  import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
+  import { useTask } from "@threlte/core";
+  import {
+    Instance,
+    InstancedMesh,
+    OrbitControls,
+    interactivity,
+    RoundedBoxGeometry,
+  } from "@threlte/extras";
+  import { spring } from "svelte/motion";
+  import { arrayIterator, fillRange } from "@thi.ng/arrays";
+  import { Text } from "@threlte/extras";
+
+  const aspect = useTask(() => {
+    return window.innerWidth / window.innerHeight;
+  });
+
+  const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
+  const palette = cosineGradient(28, gradient).map(css);
+  const colorRotate = 12;
+  const elementsPerSide = 6;
+  const radius = 0.3 || 0.1618;
+  const layers = [1];
+  const scale = spring(0.7);
+  scale.stiffness = 0.1;
+  scale.damping = 0.2;
+  scale.precision = 0.005;
+
+  $: labelText = "";
+
+  function nodeClick(o: any) {
+    scale.damping = 0.2;
+    scale.set(1);
+    o.eventObject.color.r = 1;
+  }
+
+  function nodeEnter(o: any) {
+    console.log(o.instanceId);
+  }
+
+  function nodeLeave(eventObject: any) {
+    scale.damping = 0.8;
+    scale.set(0.4);
+  }
+
+  interactivity();
+</script>
+
+<T.PerspectiveCamera
+  makeDefault
+  args={[50, aspect, 0.1, 100]}
+  position={[elementsPerSide, elementsPerSide, elementsPerSide]}
+>
+  <OrbitControls
+    enableDamping
+    enableZoom
+    maxDistance="5"
+    minDistance="4"
+    minAzimuthAngle="-1"
+    maxAzimuthAngle="1"
+    enablePan="false"
+    zoomSpeed="0.1"
+    panSpeed="0.05"
+  />
+</T.PerspectiveCamera>
+
+<InstancedMesh position={[-1.5, -1, -1]}>
+  <!-- <T.CylinderGeometry args={[radius, radius + 0.01, 0.1]} /> -->
+  <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
+  <T.MeshStandardMaterial color="antiqueWhite" />
+  {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
+    {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 6))};
+    {#each layers as y}
+      {#each Array.from({ length: elementsPerSide }, (_, i) => i) as z}
+        {@const colorPick = (x + y + z + colorRotate) % palette.length}
+        {@const pos = {
+          x: (x + Math.sin(Number(offsetter.next().value))) / 2,
+          y: y,
+          z: (z - 1) / 2,
+        }}
+
+        <Text
+          scale={4 / 6}
+          text={`𝌺 ${y * z + x * elementsPerSide}`}
+          characters="0123456789.►𝌺-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+          position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
+          color={palette[colorPick - 2]}
+        />
+
+        <Instance
+          on:click={(e) => {
+            e.stopPropagation();
+            nodeClick(e);
+          }}
+          on:pointerenter={nodeEnter}
+          on:pointerleave={nodeLeave}
+          color={palette[colorPick]}
+          position={[pos.x, pos.y, pos.z]}
+          renderOrder={x + y + z}
+        />
+      {/each}
+    {/each}
+  {/each}
+</InstancedMesh>
+
+<T.DirectionalLight position.y={10} position.z={5} />
+<T.AmbientLight intensity={$scale} />

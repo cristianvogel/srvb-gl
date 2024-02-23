@@ -10,13 +10,15 @@
     CurrentPickedID,
     manifest,
     UI_StateArrayFSMs,
+    UI_ParsedStates,
     CablesParams,
     UpdateStateFSM,
     LocksStore,
     type LocksStoreEntry,
     ConsoleText,
-    UI_ParsedStates,
   } from "../stores/stores";
+  import type { NodeState } from "../../types";
+  import Console from "../lib/Console.svelte";
 
   type CablesPatch = typeof $CablesPatch.Patch;
   const { NUMBER_PARAMS } = manifest;
@@ -29,8 +31,21 @@
 
   function setupCablesPatchObservers(patch: CablesPatch) {
     console.log("setup Cables Patch Observers...you should only see this once");
-    const paramsAverage = patch.getVar("ui_paramsAverage");
+
+    // these are non- directly used in the Host, so they need speical treatment
     const pickedID = patch.getVar("param_pickedID");
+    const paramsAverage = patch.getVar("ui_paramsAverage");
+
+    // pickedID is the index of the raycast intersect body
+    // there are 36 nodes in the current patch.
+    // when it changes, it updates the $CurrentPickedID store
+    // and triggers a view state update
+    if (pickedID) {
+      pickedID.on("change", function (id: number) {
+        $CurrentPickedID = id;
+        $NativeMessage.setViewState($UI_ParsedStates.parsed());
+      });
+    }
 
     // inerpolatingPreset is an array of all preset parameters
     // and is interpolated on the Cables side.
@@ -53,15 +68,9 @@
             .sort(([paramIdA], [paramIdB]) => paramIdA.localeCompare(paramIdB))
             .map(([paramId, value]) => value);
 
-          // Update the parameters with the sorted values
+          // Update the parameters in the host with the sorted values
           for (let i = 0; i < NUMBER_PARAMS; i++) {
             if (sortedValues[i] !== undefined && params[i] !== undefined) {
-              // console.log(
-              //   "requesting update-> ",
-              //   params[i],
-              //   " : ",
-              //   sortedValues[i]
-              // );
               $NativeMessage.requestParamValueUpdate(
                 params[i],
                 sortedValues[i]
@@ -71,41 +80,38 @@
         }
       });
     }
-
-    // pickedID is the index of the raycast intersect body
-    // there are 36 nodes in the current patch.
-    // when it changes, it updates the $CurrentPickedID store
-    if (pickedID) {
-      pickedID.on("change", function (id: number) {
-        $CurrentPickedID = id;
-        $NativeMessage.setViewState($UI_ParsedStates.parsed());
-      });
-    }
   }
+
+  /*
+   * Callback functions that exist in Cables GL patch
+   */
 
   function setupCablesCallbacks(patch: CablesPatch) {
     // implement node click interaction sent by Cables.op.callback
     patch.config.interactionFromUI = function (params: string[]) {
+      console.log("Sent from UI" + params);
       $UI_StateArrayFSMs[$CurrentPickedID].toggle();
-      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
+      $UI_StateArrayFSMs = [...$UI_StateArrayFSMs]; // reactive assignment
     };
 
     // implement randomise all nodes sent by Cables.op.callback
     patch.config.randomiseAllNodes = function (params: string[]) {
-      $UI_StateArrayFSMs.forEach((node) => node.randomise());
-      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
+      $UI_StateArrayFSMs.forEach((node: NodeState) => node.randomise());
+      $UI_StateArrayFSMs = [...$UI_StateArrayFSMs]; // reactive assignment
     };
   }
 
   function handleShiftClick(event: MouseEvent) {
     if (event.shiftKey) {
+
       $UI_StateArrayFSMs[$CurrentPickedID].empty();
-      $UI_StateArrayFSMs = $UI_StateArrayFSMs; // reactive assignment
+      $UI_StateArrayFSMs = [...$UI_StateArrayFSMs]; // reactive assignment
     }
   }
-
+  /*
+   * setup  all the listners on the param_ set of variables from the Cables patch
+   */
   function setupUIParamCallbacks(patch: any) {
-    // get  all the param_ set of variables from the Cables patch
     const cablesParamVars = getCablesParamOnly();
 
     // assign an on.("change") callback to each variable in cablesParamVars
