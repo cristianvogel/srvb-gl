@@ -13,17 +13,17 @@
     manifest,
     HostState,
     UI_StateArrayFSMs,
-  } from "../stores/stores";
+  } from "../../stores/stores";
 
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import ParamUpdates from "../data/ParamUpdates.svelte";
-  import Console from "../lib/Console.svelte";
-  import Nodes from "../data/Nodes.svelte";
-  import PatchObservers from "../data/PatchObservers.svelte";
+  import ParamUpdates from "../../data/ParamUpdates.svelte";
+  import Console from "../Console.svelte";
+  import Nodes from "../../data/Nodes.svelte";
+  import PatchObservers from "../../data/PatchObservers.svelte";
   import { get } from "svelte/store";
-  import { ConsoleText, ConsoleFSM } from "../stores/stores";
-  import ParameterLock from "./ParameterLock.svelte";
+  import { ConsoleText, ConsoleFSM } from "../../stores/stores";
+  import ParameterLock from "../ParameterLock.svelte";
 
   // component props
   export let patch: string;

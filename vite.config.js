@@ -31,7 +31,7 @@ export default defineConfig({
   server: {
     watch: {
       // The paths to be added to the watch list
-      include: ['public/nel-vcs-24/js/patch.js'],
+
     }
   }
 })

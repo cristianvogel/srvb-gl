@@ -6,18 +6,13 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
   import Scene from "./lib/Scene.svelte";
-  import OffScreenScene from "./lib/OffScreenScene.svelte";
-
-  //const rendererParameters: THREE.WebGLRendererParameters = {};
+  import Sidebar from "./lib/Sidebar.svelte";
 </script>
 
-<div>
+<div class="w-full">
   <Canvas autoRender={true}>
     <Scene />
   </Canvas>
+
+  <Sidebar />
 </div>
-<!-- <div hidden>
-  <Canvas autoRender={false} size={{ width: 512, height: 512 }}>
-    <OffScreenScene />
-  </Canvas>
-</div> -->

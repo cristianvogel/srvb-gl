@@ -9,10 +9,11 @@
     OrbitControls,
     interactivity,
     RoundedBoxGeometry,
+    Text,
   } from "@threlte/extras";
-  import { spring } from "svelte/motion";
+  import { spring, tweened } from "svelte/motion";
+  import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
-  import { Text } from "@threlte/extras";
 
   const aspect = useTask(() => {
     return window.innerWidth / window.innerHeight;
@@ -24,27 +25,36 @@
   const elementsPerSide = 6;
   const radius = 0.3 || 0.1618;
   const layers = [1];
-  const scale = spring(0.7);
-  scale.stiffness = 0.1;
-  scale.damping = 0.2;
-  scale.precision = 0.005;
 
-  $: labelText = "";
+  const springs = Array.from({ length: elementsPerSide * elementsPerSide }).map(
+    () => spring(0.7, { stiffness: 0.1, damping: 0.2, precision: 0.005 })
+  );
+
+  console.log("springs ready -> ", springs);
+  const smoothy = {
+    x: tweened(undefined, {
+      duration: 1000,
+      easing: cubicOut,
+    }),
+    z: tweened(undefined, {
+      duration: 1000,
+      easing: cubicOut,
+    }),
+  };
+  $: smooth_X = smoothy.x;
+  $: smooth_Z = smoothy.z;
 
   function nodeClick(o: any) {
-    scale.damping = 0.2;
-    scale.set(1);
     o.eventObject.color.r = 1;
   }
 
   function nodeEnter(o: any) {
     console.log(o.instanceId);
+    smoothy.x.update((n) => o.eventObject.position.x);
+    smoothy.z.update((n) => o.eventObject.position.z);
   }
 
-  function nodeLeave(eventObject: any) {
-    scale.damping = 0.8;
-    scale.set(0.4);
-  }
+  function nodeLeave(eventObject: any) {}
 
   interactivity();
 </script>
@@ -68,7 +78,6 @@
 </T.PerspectiveCamera>
 
 <InstancedMesh position={[-1.5, -1, -1]}>
-  <!-- <T.CylinderGeometry args={[radius, radius + 0.01, 0.1]} /> -->
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
   <T.MeshStandardMaterial color="antiqueWhite" />
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
@@ -81,15 +90,15 @@
           y: y,
           z: (z - 1) / 2,
         }}
+        {@const nodeIndex = y * z + x * elementsPerSide}
 
         <Text
           scale={4 / 6}
-          text={`𝌺 ${y * z + x * elementsPerSide}`}
+          text={`𝌺 ${nodeIndex}`}
           characters="0123456789.►𝌺-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
           position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
           color={palette[colorPick - 2]}
         />
-
         <Instance
           on:click={(e) => {
             e.stopPropagation();
@@ -106,5 +115,5 @@
   {/each}
 </InstancedMesh>
 
-<T.DirectionalLight position.y={10} position.z={5} />
-<T.AmbientLight intensity={$scale} />
+<T.DirectionalLight position={[$smooth_X, 10, $smooth_Z]} />
+<T.AmbientLight intensity={0.7} />
