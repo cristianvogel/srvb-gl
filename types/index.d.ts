@@ -1,7 +1,7 @@
 // Type definitions for
 // Project: NEL-VCS-24
 
-export type Parameter = {
+export type HostParameterDefinition = {
   paramId: string;
   name: string;
   min: number;
@@ -11,11 +11,18 @@ export type Parameter = {
 
 export type LocalManifest = {
   window: { width: number; height: number };
-  parameters: Parameter[];
+  parameters: HostParameterDefinition[];
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
   sampleRate?: number;
   viewState?: any;
+};
+
+export type UIParameterDefinition = {
+  min: number;
+  max: number;
+  value: number;
+  step: number;
 };
 
 //------------- Native Interops -------------------
@@ -33,3 +40,5 @@ export interface StatesArrayActions {
 }
 
 export type NodeState = ReturnType<typeof createNodeStateFSM>;
+
+//--------

@@ -8,7 +8,13 @@ import {
   type Writable,
 } from "svelte/store";
 import fsm from "svelte-fsm";
-import type { Parameter, LocalManifest, NativeMessages } from "../../types";
+
+import type {
+  HostParameterDefinition,
+  LocalManifest,
+  NativeMessages,
+  UIParameterDefinition,
+} from "../../types";
 
 // ---- native interops -------------------
 
@@ -58,8 +64,8 @@ export const NativeMessage: Writable<NativeMessages> = writable({
 });
 
 //---- Cables  -------------------
-export const CablesPatch: Writable<any> = writable();
-export const CablesParams: Writable<any> = writable();
+// export const CablesPatch: Writable<any> = writable();
+// export const CablesParams: Writable<any> = writable();
 
 // reference to public/Manifest.json
 // used by the native side for audio updates
@@ -95,6 +101,7 @@ export const ConsoleText: Writable<string> = writable("Console:");
 // Machines ⤵︎
 // ⤵︎ local helper functions and types
 export type FSM = ReturnType<typeof fsm>;
+export type NodeStateFSM = ReturnType<typeof createNodeStateFSM>
 interface Debounced {
   debounce: (delay: number) => void;
 }
@@ -102,6 +109,18 @@ function debounce(context: FSM, transition: string, delay: number) {
   (context[transition] as unknown as Debounced).debounce(delay);
   //console.count("debounce function");
 }
+
+// global helper function for the array of FSMs
+export const getNodeStateAs = {
+  number: (index: number) => {
+    return Number(
+      String(get(get(UI_StateArrayFSMs)[index])) === "filled" ? 1 : 0
+    );
+  },
+  key: (index: number) => {
+    return String(get(get(UI_StateArrayFSMs)[index]));
+  },
+};
 
 // ⤵︎ Factory object for simple toggle to lock a parameter in the UI
 export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
@@ -124,6 +143,7 @@ export const createLockFSM = function (): FSM {
 };
 
 // ⤵︎ Machine for handling UI to Host communication
+
 export const UpdateStateFSM = fsm("ready", {
   ready: {
     updateFrom(src) {
@@ -146,7 +166,7 @@ export const UpdateStateFSM = fsm("ready", {
 });
 
 // ⤵︎ Factory function for making Machines that manage state of presets in the GUI
-export function createNodeStateFSM(initial: "empty" | "filled" = "empty"): FSM {
+export function createNodeStateFSM(initial: "empty" | "filled" = "empty") {
   return fsm(initial, {
     empty: {
       toggle() {
@@ -158,13 +178,10 @@ export function createNodeStateFSM(initial: "empty" | "filled" = "empty"): FSM {
     },
     filled: {
       toggle() {
-        return "filled"; // feature: a shift toggle, to empty the node?
+        return "empty";
       },
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
-      },
-      empty() {
-        return "empty";
       },
     },
   });
@@ -225,17 +242,18 @@ export interface LocksStoreEntry {
   [key: string]: number;
 }
 
+export interface UINodeStyle {
+  base: string | THREE.Color;
+  highlighted?: string | THREE.Color;
+  [key: string]: string | THREE.Color | undefined;
+}
+
 // create a state machine for each node that will be used to
 // track whether the node is holding stored preset values
 
-export const UI_StateArrayFSMs: Writable<any> = writable();
+export const UI_StateArrayFSMs: Writable< NodeStateFSM []> = writable([]);
 // will be filled with initialising constructor
-
-export const UI_ParsedStates: Writable<any> = writable({
-  parsed: () => {
-    // will parse the string output of the FSM to 0 1 array
-  },
-});
+export const UI_Styles: Writable<UINodeStyle[]> = writable([]);
 
 export const StoredPresets = writable(); // not used yet
 
@@ -246,14 +264,16 @@ export const CurrentPickedID: Writable<number> = writable(0);
 export const PixelDensity: Writable<number> = writable(2);
 
 //---- audio parameters -------------------
-export const Parameters: Writable<Parameter[]> = writable(manifest.parameters);
-export const DisplayNames: Writable<string[]> = writable(
-  manifest.parameters.map((p: Parameter) => p.name)
+export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
+  manifest.parameters
 );
+export const ParamDefsUI: Writable<{ [key: string]: UIParameterDefinition }> =
+  writable();
 export const ParamIds: Writable<string[]> = writable(
-  manifest.parameters.map((p: Parameter) => p.paramId)
+  manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
 );
 
+// todo;;;; look at this?
 // specify an empty object with valid param keys for the locks store
 // otherwise the UI will break
 const emptyLocksObject: LocksStoreEntry = {};

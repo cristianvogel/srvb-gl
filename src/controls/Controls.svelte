@@ -55,6 +55,7 @@
         <label>
           {label}
           <input
+            id="sidebar_range"
             on:input={updateControls}
             on:wheel={updateControls}
             data-key={label}

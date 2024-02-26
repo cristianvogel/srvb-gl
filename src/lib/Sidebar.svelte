@@ -1,17 +1,22 @@
 <script lang="ts">
   import { Controls, guiControls } from "../controls";
   import ParameterLock from "./ParameterLock.svelte";
+  import { ParamDefsHost } from "../stores/stores";
+  import type { UIParameterDefinition } from "../../types";
 
-  const params = {
-    decay: { min: 0.0, max: 1.0, value: 0.5, step: 0.001 },
-    mix: { min: 0.0, max: 1.0, value: 1.0, step: 0.001 },
-    mod: { min: 0.0, max: 1.0, value: 0.5, step: 0.001 },
-    size: { min: 0.0, max: 1.0, value: 0.5, step: 0.001 },
-  };
+  const paramsForUI: { [key: string]: UIParameterDefinition } =
+    $ParamDefsHost.reduce(
+      (
+        acc: { [key: string]: UIParameterDefinition },
+        { paramId, min, max, defaultValue }
+      ) => {
+        acc[paramId] = { min, max, value: defaultValue, step: 0.001 };
+        return acc;
+      },
+      {}
+    );
 
-  const controlPanel = guiControls(params);
-
-  console.log(controlPanel);
+  const controlPanel = guiControls(paramsForUI);
 </script>
 
 <Controls controls={controlPanel} />
