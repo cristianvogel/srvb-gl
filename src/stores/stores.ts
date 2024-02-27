@@ -15,6 +15,11 @@ import type {
   NativeMessages,
   UIParameterDefinition,
 } from "../../types";
+import type { Vector2Tuple } from "three";
+
+//-------- new Threlte related stores --------------------
+export const RayCastPointerPosition: Writable<Vector2Tuple> = writable([0, 0]);
+export const ShowMiniBars: Writable<boolean> = writable(false);
 
 // ---- native interops -------------------
 

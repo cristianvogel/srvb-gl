@@ -1,8 +1,10 @@
 <script lang="ts">
+  import RayCastPointer from './RayCastPointer.svelte';
+
   import { T } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
-  import { Color as THREE_Color } from "THREE";
+  import { Vector3, type Vector3Tuple, Color as THREE_Color } from "three";
   import { useTask } from "@threlte/core";
   import {
     Instance,
@@ -11,14 +13,18 @@
     interactivity,
     RoundedBoxGeometry,
     Text,
+    transitions,
+    PortalTarget,
   } from "@threlte/extras";
-  import { spring, tweened } from "svelte/motion";
+  import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import { createEventDispatcher } from "svelte";
-  import { getNodeStateAs, UI_Styles } from "../stores/stores";
-
+  import { getNodeStateAs, UI_Styles, RayCastPointerPosition } from "../stores/stores";  
+  
+  
   const dispatch = createEventDispatcher();
+  
 
   const aspect = useTask(() => {
     return window.innerWidth / window.innerHeight;
@@ -26,42 +32,25 @@
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(28, gradient).map(css);
-  let pickedColor: THREE_Color = new THREE_Color("#000");
   const colorRotate = 12;
   const elementsPerSide = 6;
   const radius = 0.3 || 0.1618;
   const layers = [1]; // layers of nodes
+  const bigInstancedMeshPosition = [-1.5, -1, -1];
 
   const smoothy = {
-    x: tweened(undefined, {
+    x: tweened(undefined || 0, {
       duration: 1000,
       easing: cubicOut,
     }),
-    z: tweened(undefined, {
+    z: tweened(undefined || 0, {
       duration: 1000,
       easing: cubicOut,
     }),
   };
+
   $: smooth_X = smoothy.x;
   $: smooth_Z = smoothy.z;
-
-  function nodeClick(o: any) {
-    const nodeId: number = o.instanceId;
-    dispatch("updateStates", { nodeId: nodeId });
-    const stateAsColor:string = ['base', 'highlighted'].at(getNodeStateAs.number(nodeId))!;
-    console.log($UI_Styles[nodeId][stateAsColor]);
-    o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]) ;
-  }
-
-  function nodeEnter(o: any) {
-    // console.log(o.instanceId);
-    smoothy.x.update((n) => o.eventObject.position.x);
-    smoothy.z.update((n) => o.eventObject.position.z);
-  }
-
-  function nodeLeave(eventObject: any) {}
-
-  interactivity();
 
   function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
     $UI_Styles[nodeIndex].base = colorPick;
@@ -72,6 +61,37 @@
     );
   }
 
+  function nodeClick(o: any) {
+    const nodeId: number = o.instanceId;
+    console.log('click', nodeId);
+    dispatch("updateStates", { nodeId: nodeId });
+    const stateAsColor: string = ["base", "highlighted"].at(
+      getNodeStateAs.number(nodeId)
+    )!;
+    o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]);
+  }
+
+  function alignToMesh(v: Vector3): Vector3Tuple {
+    let offsetVec3 = new Vector3();
+    return offsetVec3
+      .addVectors(v, new Vector3().fromArray(bigInstancedMeshPosition))
+      .toArray();
+  }
+
+  function nodeEnter(o: any) {
+    // Need to offset event object position by the
+    // position offset of the big instanced
+    // mesh group, which is translated to fit
+    // view.
+    let nodePosition = o.eventObject.position;
+    nodePosition = alignToMesh(nodePosition);
+    smoothy.x.update((n) => nodePosition[0]);
+    smoothy.z.update((n) => nodePosition[1]);
+  }
+
+  function nodeLeave(eventObject: any) {}
+  transitions();
+  interactivity();
 </script>
 
 <T.PerspectiveCamera
@@ -90,11 +110,14 @@
     zoomSpeed="0.1"
     panSpeed="0.05"
   />
+ 
 </T.PerspectiveCamera>
 
-<InstancedMesh position={[-1.5, -1, -1]}>
+
+
+<InstancedMesh position={bigInstancedMeshPosition} name="grid">
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
-  <T.MeshStandardMaterial color="antiqueWhite" />
+  <T.MeshStandardMaterial />
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
     {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 6))};
     {#each layers as y}
@@ -130,7 +153,10 @@
       {/each}
     {/each}
   {/each}
+  <PortalTarget id="nodes"/>
 </InstancedMesh>
 
-<T.DirectionalLight position={[$smooth_X, 10, $smooth_Z]} />
+<RayCastPointer />
+
+<T.DirectionalLight position={[$smooth_X, 8, $smooth_Z]} />
 <T.AmbientLight intensity={0.7} />
