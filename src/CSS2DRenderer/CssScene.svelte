@@ -2,16 +2,19 @@
   import { T, useTask, useThrelte } from '@threlte/core'
   import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
   import CssObject from './CssObject.svelte'
-  import { interactivity } from '@threlte/extras';
-  import { RayCastPointerPosition } from '../stores/stores';
+  import { RayCastPointerPosition, CSSRenderer } from '../stores/stores';
   import Minibars from './Minibars.svelte';
 
+ 
   const { scene, size, autoRenderTask, camera } = useThrelte()
 
   // Set up the CSS2DRenderer to run in a div placed atop the <Canvas>
   const element = document.querySelector('#css-renderer-target') as HTMLElement
-  const cssRenderer = new CSS2DRenderer({ element })
-  $: cssRenderer.setSize($size.width, $size.height)
+  $CSSRenderer = new CSS2DRenderer( { element })
+  $CSSRenderer.setSize($size.width, $size.height)
+
+  $:console.log( 'CssScene ►' + $CSSRenderer.getSize() )
+  
 
   // We are running two renderers, and don't want to run
   // updateMatrixWorld twice; tell the renderers that we'll handle
@@ -35,7 +38,7 @@
   useTask(
     () => {
       // Update the DOM
-      cssRenderer.render(scene, camera.current)
+      $CSSRenderer.render(scene, camera.current)
     },
     {
       after: autoRenderTask,

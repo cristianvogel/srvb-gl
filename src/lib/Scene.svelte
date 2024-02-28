@@ -1,7 +1,7 @@
 <script lang="ts">
-  import RayCastPointer from './RayCastPointer.svelte';
+  import RayCastPointer from "./RayCastPointer.svelte";
 
-  import { T } from "@threlte/core";
+  import { T, useThrelte } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
   import { Vector3, type Vector3Tuple, Color as THREE_Color } from "three";
@@ -18,15 +18,16 @@
   import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import { createEventDispatcher } from "svelte";
-  import { getNodeStateAs, UI_Styles, RayCastPointerPosition, ShowMiniBars } from "../stores/stores";  
-  
-  
-  const dispatch = createEventDispatcher();
-  
+  import {
+    getNodeStateAs,
+    UI_Styles,
+    ShowMiniBars,
+  } from "../stores/stores";
 
-  // const aspect = useTask(() => {
-  //   return window.innerWidth / window.innerHeight;
-  // });
+  const { size } = useThrelte()
+  const dispatch = createEventDispatcher();
+
+  $:console.log( 'MainView ►' + $size )
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(28, gradient).map(css);
@@ -35,20 +36,6 @@
   const radius = 0.3 || 0.1618;
   const layers = [1]; // layers of nodes
   const bigInstancedMeshPosition = [-1.5, -1, -1];
-
-  const smoothy = {
-    x: tweened(undefined || 0, {
-      duration: 1000,
-      easing: cubicOut,
-    }),
-    z: tweened(undefined || 0, {
-      duration: 1000,
-      easing: cubicOut,
-    }),
-  };
-
-  $: smooth_X = smoothy.x;
-  $: smooth_Z = smoothy.z;
 
   function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
     $UI_Styles[nodeIndex].base = colorPick;
@@ -61,7 +48,7 @@
 
   function nodeClick(o: any) {
     const nodeId: number = o.instanceId;
-    console.log('click', nodeId);
+    console.log("click", nodeId);
     dispatch("updateStates", { nodeId: nodeId });
     const stateAsColor: string = ["base", "highlighted"].at(
       getNodeStateAs.number(nodeId)
@@ -69,17 +56,10 @@
     o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]);
   }
 
-
-  function nodeEnter(o: any) {
-    // Need to offset event object position by the
-    // position offset of the big instanced
-    // mesh group, which is translated to fit
-    // view.
-   
-  }
+  function nodeEnter(o: any) {}
 
   function nodePointer(o: any) {
-$ShowMiniBars = true;
+    $ShowMiniBars = true;
   }
 
   function nodeLeave(eventObject: any) {
@@ -105,10 +85,7 @@ $ShowMiniBars = true;
     zoomSpeed="0.1"
     panSpeed="0.05"
   />
- 
 </T.PerspectiveCamera>
-
-
 
 <InstancedMesh position={bigInstancedMeshPosition} name="grid">
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
@@ -127,7 +104,7 @@ $ShowMiniBars = true;
 
         <Text
           scale={4 / 6}
-          text={`𝌺 ${nodeIndex}`}
+          text={`${nodeIndex}`}
           characters="0123456789.►𝌺-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
           position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
           color={palette[colorPick - 2]}
@@ -149,10 +126,10 @@ $ShowMiniBars = true;
       {/each}
     {/each}
   {/each}
-  <PortalTarget id="nodes"/>
+  <PortalTarget id="nodes" />
 </InstancedMesh>
 
 <RayCastPointer />
 
-<T.DirectionalLight position={[$smooth_X, 8, $smooth_Z]} />
+<T.DirectionalLight position={[0, 8, 0]} />
 <T.AmbientLight intensity={0.7} />

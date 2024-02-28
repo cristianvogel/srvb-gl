@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ParameterChange from "../data/ParameterChange.svelte";
+  import { NativeMessage, UI_Params, UpdateStateFSM } from "../stores/stores";
+
   export let controls;
 
   const entries: any = Object.entries($controls);
@@ -16,8 +19,8 @@
   function updateControls(e: Event) {
     let { value, type, dataset, checked, step, min, max } =
       e.target as HTMLInputElement;
-    let key = dataset.key!;
 
+    let key = dataset.key!;
     switch (type) {
       case "range":
         if (e.type === "wheel") {
@@ -42,9 +45,19 @@
 
       default:
         $controls[key] = value;
+    } 
+    // update global store reflecting UI parameter value
+    // $controls is reference to $guiControls
+    $UI_Params = { ...$controls };
+    if ($UpdateStateFSM !== "updatingUI") {
+    console.log("key? ", $controls[key]);
+    $NativeMessage.requestParamValueUpdate(key, $controls[key].value);
     }
+      
   }
 </script>
+
+<ParameterChange {controls} />
 
 {#if isNotEmpty}
   <div class="sidebar">
@@ -106,7 +119,7 @@
 <style>
   .sidebar {
     position: absolute;
-    transform: scale( var(--sidebar-scale, 0.85));
+    transform: scale(var(--sidebar-scale, 0.85));
     background-color: var(--sidebar-background-color, #222);
     top: var(--sidebar-position-top, 10px);
     right: var(--sidebar-position-right);

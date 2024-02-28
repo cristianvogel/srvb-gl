@@ -32,7 +32,7 @@
   {#each $preset as param, i}
     <div style='height: 1.25rem'>
       <p class="minibar-label">{param.name}</p>
-      <svg height="1rem">
+      <svg height="16px">
         <Bar value={param.value} />
         </svg>
     </div>

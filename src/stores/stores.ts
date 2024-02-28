@@ -15,11 +15,14 @@ import type {
   NativeMessages,
   UIParameterDefinition,
 } from "../../types";
-import type { Vector2Tuple } from "three";
+import type { Vector2Tuple, Renderer } from "three";
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+
 
 //-------- new Threlte related stores --------------------
 export const RayCastPointerPosition: Writable<Vector2Tuple> = writable([0, 0]);
 export const ShowMiniBars: Writable<boolean> = writable(false);
+export const CSSRenderer: Writable<CSS2DRenderer> = writable( new CSS2DRenderer()  );
 
 // ---- native interops -------------------
 
@@ -68,15 +71,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   },
 });
 
-//---- Cables  -------------------
-// export const CablesPatch: Writable<any> = writable();
-// export const CablesParams: Writable<any> = writable();
-
-// reference to public/Manifest.json
-// used by the native side for audio updates
-// not sure how to import this dynamically at build time!
-// Also sure to make it reflect public/manifest.json if that
-// gets updated
+//-----------------  UI defs and parameters -------------------
 
 const NUMBER_NODES = 36;
 export const manifest: LocalManifest = {
@@ -97,6 +92,9 @@ export const manifest: LocalManifest = {
   ],
   viewState: new Array(NUMBER_NODES).fill(0),
 };
+// todo: annotate, this holds UI control panel parameters
+export const UI_Params: Writable<any> = writable({})
+
 
 // a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
@@ -268,15 +266,19 @@ export const CurrentPickedID: Writable<number> = writable(0);
 
 export const PixelDensity: Writable<number> = writable(2);
 
-//---- audio parameters -------------------
+//---- registered audio parameters -------------------
 export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
   manifest.parameters
 );
-export const ParamDefsUI: Writable<{ [key: string]: UIParameterDefinition }> =
-  writable();
+// registered audio parameters for UI
 export const ParamIds: Writable<string[]> = writable(
   manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
 );
+
+// export const ParamDefsUI: Writable<{ [key: string]: UIParameterDefinition }> =
+//   writable();
+
+
 
 // todo;;;; look at this?
 // specify an empty object with valid param keys for the locks store
