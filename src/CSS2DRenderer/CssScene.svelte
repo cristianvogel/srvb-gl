@@ -54,10 +54,7 @@
   pointerEvents={false}
 >
   <Minibars />
-
   <T.Mesh slot="three">
-   
-    <T.MeshStandardMaterial color="#4F6FF6" />
   </T.Mesh>
 </CssObject>
 
