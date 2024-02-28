@@ -13,12 +13,8 @@
 
   <style>
     .minibar {
-      transform: perspective(1000px) rotateX(20deg) rotateY(0deg) rotateZ(0deg);
-      transform: scale(0.85);
+      transform: scale(var(--minibar-scale, 0.85)) translate(-1rem, -3.5rem);
       position: absolute;
-      margin-left: 0.75rem;
-      border-radius: 0.25rem;
-      padding: 0.25rem 0.5rem;
       pointer-events: none;
     }
   </style>

@@ -28,14 +28,23 @@
   ]);
 </script>
 
-<div class="sidebar" style="gap:0">
+<div style="gap:0">
   {#each $preset as param, i}
-    <div>
-      <h5 class="sidebar-label">{param.name}</h5>
-      <svg height="16px">
+    <div style='height: 1.25rem'>
+      <p class="minibar-label">{param.name}</p>
+      <svg height="1rem">
         <Bar value={param.value} />
-        <svg> </svg></svg
-      >
+        </svg>
     </div>
   {/each}
 </div>
+
+<style>
+  .minibar-label {
+    font-size: 0.75rem;
+    transform: translateY(1rem); ;
+    margin-left: 0.125rem;
+    padding: 0;
+    text-align: left;
+  }
+</style>

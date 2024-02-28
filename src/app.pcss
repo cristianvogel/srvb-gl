@@ -21,6 +21,9 @@ body {
 }
 
 :root {
+  --sidebar-scale: 0.8;
+  --slider-thumb-color: rgb(211, 33, 190);
+  --minibar-scale: 0.8;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -31,9 +34,8 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  --slider-thumb-color: rgb(211, 33, 190);
 }
+
 
 #app {
   max-width: 1280px;
@@ -58,6 +60,3 @@ canvas {
   -ms-user-select: none;
   user-select: none;
 }
-
-@tailwind components;
-@tailwind utilities;

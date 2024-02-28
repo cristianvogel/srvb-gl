@@ -50,7 +50,6 @@
 
 <CssObject
   position={$RayCastPointerPosition}
-  center={[0.5, 1]}
   pointerEvents={false}
 >
   <Minibars />
