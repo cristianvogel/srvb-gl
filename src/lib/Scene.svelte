@@ -5,7 +5,6 @@
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
   import { Vector3, type Vector3Tuple, Color as THREE_Color } from "three";
-  import { useTask } from "@threlte/core";
   import {
     Instance,
     InstancedMesh,
@@ -13,22 +12,21 @@
     interactivity,
     RoundedBoxGeometry,
     Text,
-    transitions,
     PortalTarget,
   } from "@threlte/extras";
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import { createEventDispatcher } from "svelte";
-  import { getNodeStateAs, UI_Styles, RayCastPointerPosition } from "../stores/stores";  
+  import { getNodeStateAs, UI_Styles, RayCastPointerPosition, ShowMiniBars } from "../stores/stores";  
   
   
   const dispatch = createEventDispatcher();
   
 
-  const aspect = useTask(() => {
-    return window.innerWidth / window.innerHeight;
-  });
+  // const aspect = useTask(() => {
+  //   return window.innerWidth / window.innerHeight;
+  // });
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(28, gradient).map(css);
@@ -71,32 +69,29 @@
     o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]);
   }
 
-  function alignToMesh(v: Vector3): Vector3Tuple {
-    let offsetVec3 = new Vector3();
-    return offsetVec3
-      .addVectors(v, new Vector3().fromArray(bigInstancedMeshPosition))
-      .toArray();
-  }
 
   function nodeEnter(o: any) {
     // Need to offset event object position by the
     // position offset of the big instanced
     // mesh group, which is translated to fit
     // view.
-    let nodePosition = o.eventObject.position;
-    nodePosition = alignToMesh(nodePosition);
-    smoothy.x.update((n) => nodePosition[0]);
-    smoothy.z.update((n) => nodePosition[1]);
+   
   }
 
-  function nodeLeave(eventObject: any) {}
-  transitions();
+  function nodePointer(o: any) {
+$ShowMiniBars = true;
+  }
+
+  function nodeLeave(eventObject: any) {
+    $ShowMiniBars = false;
+  }
+
   interactivity();
 </script>
 
 <T.PerspectiveCamera
   makeDefault
-  args={[50, aspect, 0.1, 100]}
+  args={[50, 1, 0.1, 100]}
   position={[elementsPerSide, elementsPerSide, elementsPerSide]}
 >
   <OrbitControls
@@ -146,6 +141,7 @@
           }}
           on:pointerenter={nodeEnter}
           on:pointerleave={nodeLeave}
+          on:pointermove={nodePointer}
           color={palette[colorPick]}
           position={[pos.x, pos.y, pos.z]}
           renderOrder={x + y + z}
