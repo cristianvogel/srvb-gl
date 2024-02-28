@@ -1,6 +1,6 @@
 <script lang="ts">
 
-    import { HostState, ParamIds, UI_Params, UpdateStateFSM } from "../stores/stores";
+    import { HostState, UI_Params, UpdateStateFSM } from "../stores/stores";
   
 
     // receive the UI controls from the Sidebar
@@ -21,13 +21,22 @@
     $: {
        
         // go through and set all the param_ Sidebar vars in the cables patch
-        if ($UI_Params) {
-    
+        if ($UI_Params && $HostState) {
+            
             try {
             const parsedHostState = $HostState;
+            
             if ($UpdateStateFSM === "updatingUI") {
                 // set UI params to host state params
-                $controls = parsedHostState;
+                // extract value from parsedHostState
+                // and set it to the UI_Params
+                Object.keys(parsedHostState).forEach(key => {
+                    if (key in $UI_Params) {
+                    console.log('Try to set UI param', key, 'to', parsedHostState[key]);
+                        $UI_Params[key].value = parsedHostState[key];
+                        $controls[key].value = parsedHostState[key];
+                    }
+                });
             }
             } catch (e) {
                 console.warn('problem updating UI params! ', e);

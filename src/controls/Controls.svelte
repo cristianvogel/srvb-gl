@@ -1,8 +1,9 @@
 <script lang="ts">
+  import type { Writable } from "svelte/store";
   import ParameterChange from "../data/ParameterChange.svelte";
   import { NativeMessage, UI_Params, UpdateStateFSM } from "../stores/stores";
 
-  export let controls;
+  export let controls: Writable<any>;
 
   const entries: any = Object.entries($controls);
 
@@ -50,8 +51,9 @@
     // $controls is reference to $guiControls
     $UI_Params = { ...$controls };
     if ($UpdateStateFSM !== "updatingUI") {
-    console.log("key? ", $controls[key]);
-    $NativeMessage.requestParamValueUpdate(key, $controls[key].value);
+    // todo: locks
+    //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
+    $NativeMessage.requestParamValueUpdate(key, $UI_Params[key].value);
     }
       
   }

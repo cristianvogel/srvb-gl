@@ -8,10 +8,14 @@
     UI_StateArrayFSMs,
     UI_Styles,
     type UINodeStyle,
+    NativeMessage,
   } from "../stores/stores";
 
   onMount(() => {
+    console.log("Registering messages from host...");
+    $NativeMessage.registerMessagesFromHost();
     // first, construct the array of FSMs and put them in a Writable
+   console .log('Initialising Node States...');
     statesArrayStoreInit();
   });
 
@@ -32,6 +36,7 @@
         ["empty", "filled"].at(startingState) as "empty" | "filled" | undefined
       );
       arrStyle[i] = {
+        base: "#000",
         color: "#111",
       };
     }
