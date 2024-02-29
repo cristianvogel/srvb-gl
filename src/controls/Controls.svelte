@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { Writable } from "svelte/store";
   import ParameterChange from "../data/ParameterChange.svelte";
-  import { NativeMessage, UI_Params, UpdateStateFSM } from "../stores/stores";
+  import { ConsoleText, NativeMessage, UpdateStateFSM } from "../stores/stores";
 
-  export let controls: Writable<any>;
+  export let UI_Controls: Writable<any>;
 
-  const entries: any = Object.entries($controls);
+  
+  const entries: any = Object.entries($UI_Controls);
 
   const isNotEmpty = entries.length > 0;
 
@@ -27,42 +28,42 @@
         if (e.type === "wheel") {
           let direction = (e as WheelEvent).deltaY < 0 ? "up" : "down";
           if (direction === "up") {
-            $controls[key].value < max && ($controls[key].value += +step);
+            $UI_Controls[key].value < max && ($UI_Controls[key].value += +step);
           } else {
-            $controls[key].value > min && ($controls[key].value -= +step);
+            $UI_Controls[key].value > min && ($UI_Controls[key].value -= +step);
           }
         } else {
-          $controls[key].value = +value;
+          $UI_Controls[key].value = +value;
         }
         break;
 
       case "checkbox":
-        $controls[key] = checked;
+        $UI_Controls[key] = checked;
         break;
 
       case "number":
-        $controls[key] = +value;
+        $UI_Controls[key] = +value;
         break;
 
       default:
-        $controls[key] = value;
+        $UI_Controls[key] = value;
     } 
-    // update global store reflecting UI parameter value
-    // $controls is reference to $guiControls
-    $UI_Params = { ...$controls };
+ 
     if ($UpdateStateFSM !== "updatingUI") {
     // todo: locks
     //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
-    $NativeMessage.requestParamValueUpdate(key, $UI_Params[key].value);
+
+    $NativeMessage.requestParamValueUpdate(key, $UI_Controls[key].value);
     }
       
   }
 </script>
 
-<ParameterChange {controls} />
+<ParameterChange controls = { UI_Controls } />
 
 {#if isNotEmpty}
   <div class="sidebar">
+    <pre>{$ConsoleText}</pre>
     <h3 class="heading">Controls</h3>
 
     {#each entries as [label, value]}
@@ -74,14 +75,14 @@
             on:input={updateControls}
             on:wheel={updateControls}
             data-key={label}
-            value={$controls[label].value}
-            min={$controls[label].min}
-            max={$controls[label].max}
-            step={$controls[label].step}
+            value={$UI_Controls[label].value}
+            min={$UI_Controls[label].min}
+            max={$UI_Controls[label].max}
+            step={$UI_Controls[label].step}
             type="range"
           />
           <div class="readout">
-            {Number($controls[label].value).toFixed(2)}
+            {Number($UI_Controls[label].value).toFixed(2)}
           </div>
           <div
             id="sidebar_range_lock"
@@ -96,7 +97,7 @@
           {label}
           <input
             on:input={updateControls}
-            checked={$controls[label]}
+            checked={$UI_Controls[label]}
             data-key={label}
             type="text"
           />
@@ -108,7 +109,7 @@
           {label}
           <input
             on:input={updateControls}
-            value={$controls[label]}
+            value={$UI_Controls[label]}
             data-key={label}
             type="color"
           />
@@ -119,6 +120,12 @@
 {/if}
 
 <style>
+
+  pre {
+    font-size: 0.75rem;
+    color: slategray;
+  }
+  
   .sidebar {
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));

@@ -17,17 +17,22 @@
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import {
     getNodeStateAs,
     UI_Styles,
     ShowMiniBars,
+    CurrentPickedId,
+    UI_Controls,
+    UI_StoredPresets,
   } from "../stores/stores";
+  import type { Preset } from "../../types";
+  import { get } from "svelte/store";
 
-  const { size } = useThrelte()
+  const { size } = useThrelte();
   const dispatch = createEventDispatcher();
 
-  $:console.log( 'MainView ►' + $size )
+  $: console.log("MainView ►" + $size);
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(28, gradient).map(css);
@@ -47,26 +52,48 @@
   }
 
   function nodeClick(o: any) {
-    const nodeId: number = o.instanceId;
-    console.log("click", nodeId);
-    dispatch("updateStates", { nodeId: nodeId });
+
+    $CurrentPickedId = o.instanceId;
+    const nodeId: number = $CurrentPickedId;
+
+    // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
+    const currentSnapshot = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
+    
+    type Snapshot = {
+      preset: Preset;
+    };
+
+    const data: Snapshot = {
+      preset: {
+        index: nodeId,
+        name: "Node_" + nodeId,
+        parameters: currentSnapshot,
+      },
+    };
+
+    dispatch("newSnapshot", data);
+
     const stateAsColor: string = ["base", "highlighted"].at(
       getNodeStateAs.number(nodeId)
     )!;
     o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]);
   }
 
-  function nodeEnter(o: any) {}
+  function nodeEnter(o: any) {
+    $CurrentPickedId = o.instanceId;
+  }
 
   function nodePointer(o: any) {
     $ShowMiniBars = true;
+    $CurrentPickedId = o.instanceId;
   }
 
   function nodeLeave(eventObject: any) {
-    $ShowMiniBars = false;
+   $ShowMiniBars = false;
   }
 
   interactivity();
+
 </script>
 
 <T.PerspectiveCamera

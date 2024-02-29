@@ -9,32 +9,49 @@
     UI_Styles,
     type UINodeStyle,
     NativeMessage,
+    ConsoleText,
   } from "../stores/stores";
+  import type { NodeLoadState } from "../../types";
 
-  onMount(() => {
-    console.log("Registering messages from host...");
-    $NativeMessage.registerMessagesFromHost();
-    // first, construct the array of FSMs and put them in a Writable
-   console .log('Initialising Node States...');
-    statesArrayStoreInit();
-  });
+  // first, ping the host,
+  // then build the array of FSMs with a start state that
+  // restores from viewState stored in the Host or initialises
+  // to empty states.
 
-  let viewState: number[];
+  console.log("Registering messages from host...");
+  $NativeMessage.registerMessagesFromHost();
+
+  let viewState: string[];
 
   // important reactive store here, will either initialise empty state
   // or restore from host viewState
-  $: viewState = $HostState?.viewState || new Array(36).fill(0);
+  $: viewState =
+    $HostState?.viewState || new Array(manifest.NUMBER_NODES).fill(null);
+
+  $: if ($UI_StateArrayFSMs && $HostState?.viewState) {
+    $ConsoleText = "Stored state:" + JSON.stringify($HostState.viewState);
+    // cablesNodeStateArray.setValue(JSON.stringify($HostState?.viewState));
+  }
+
+  console.log("Starting...");
+  statesArrayStoreInit();
 
   function statesArrayStoreInit() {
     // we are going to make an array of Finite State Machines to
     // hold the states of each Node in the UI
-    let arr: FSM[] = new Array(manifest.NUMBER_NODES).fill(null);
+
+    type StorageFSM = ReturnType<typeof createNodeStateFSM>;
+
+    let arr: StorageFSM[] = new Array(manifest.NUMBER_NODES).fill(null);
     let arrStyle: UINodeStyle[] = [];
+
     for (let i = 0; i < manifest.NUMBER_NODES; i++) {
-      const startingState: number = viewState ? viewState[i] : 0;
-      arr[i] = createNodeStateFSM(
-        ["empty", "filled"].at(startingState) as "empty" | "filled" | undefined
-      );
+
+      // are we restoring from a host viewState?
+      const startingState: NodeLoadState  = viewState ? viewState[i] as NodeLoadState : "empty";
+
+      // create the FSMs from a starting state
+      arr[i] = createNodeStateFSM(startingState, i);
       arrStyle[i] = {
         base: "#000",
         color: "#111",

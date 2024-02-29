@@ -13,9 +13,10 @@ import type {
   HostParameterDefinition,
   LocalManifest,
   NativeMessages,
-  UIParameterDefinition,
+  NodeLoadState,
+  Preset,
 } from "../../types";
-import type { Vector2Tuple, Renderer } from "three";
+import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 
 
@@ -92,8 +93,45 @@ export const manifest: LocalManifest = {
   ],
   viewState: new Array(NUMBER_NODES).fill(0),
 };
-// todo: annotate, this holds UI control panel parameters
-export const UI_Params: Writable<any> = writable({})
+
+//---- registered audio parameters -------------------
+export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
+  manifest.parameters
+);
+// registered audio parameters for UI
+export const ParamIds: Writable<string[]> = writable(
+  manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
+);
+
+//--- parameter and presets stores -------------------
+export interface LocksStoreEntry {
+  [key: string]: number;
+}
+
+export interface UINodeStyle {
+  base: string | THREE.Color;
+  highlighted?: string | THREE.Color;
+  [key: string]: string | THREE.Color | undefined;
+}
+
+// Create a state machine and referenced stores for each node 
+// that will be used to track whether the node is holding 
+// stored preset values, its color state, and other actions.
+//
+// Main store will be filled with initialising constructor
+export const UI_StateArrayFSMs: Writable< NodeStateFSM []> = writable([]);
+// Seperate store for styles
+export const UI_Styles: Writable<UINodeStyle[]> = writable([]);
+// Seperate store for Presets 
+export const UI_StoredPresets:Writable<Preset[]> = writable(Array(NUMBER_NODES).fill({ index: -1, name: '-1', parameters:{} }));  
+// Global export of current RayCast target
+export const CurrentPickedId: Writable<number> = writable(0);
+// // todo: annotate, this holds UI control panel parameters
+// export const UI_Params: Writable<any> = writable({})
+// Sidebar controls
+export const UI_Controls: Writable<any> = writable( {});
+
+
 
 
 // a console for debugging or user feedback
@@ -169,23 +207,40 @@ export const UpdateStateFSM = fsm("ready", {
 });
 
 // ⤵︎ Factory function for making Machines that manage state of presets in the GUI
-export function createNodeStateFSM(initial: "empty" | "filled" = "empty") {
+export function createNodeStateFSM(initial: NodeLoadState , index: number) {
   return fsm(initial, {
     empty: {
+
       toggle() {
         return "filled";
       },
+
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
+
+      storePreset( p ) {    
+        get(UI_StoredPresets)[index] = p;
+        // console.log( 'store preset called inside FSM ', index, ' with preset: ', p );
+        return "filled";
+      }
+
     },
     filled: {
+
       toggle() {
         return "empty";
       },
+
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
+
+      storePreset( p ) {    
+        get(UI_StoredPresets)[index] = p;
+        return "filled";
+      }
+
     },
   });
 }
@@ -195,7 +250,7 @@ export function createNodeStateFSM(initial: "empty" | "filled" = "empty") {
 let count = 0;
 let duration = 3000;
 const prompts = [
-  `Initializing grid with ${manifest.NUMBER_NODES} nodes of ${manifest.NUMBER_PARAMS} parameters.`,
+  `Grid with ${manifest.NUMBER_NODES} nodes of ${manifest.NUMBER_PARAMS} parameters.`,
   "Store some presets.",
   "Morph between them.",
   "Ready.",
@@ -241,42 +296,12 @@ export const HostState: Writable<any> = writable();
 
 export const ErrorStore: Writable<any> = writable();
 
-export interface LocksStoreEntry {
-  [key: string]: number;
-}
 
-export interface UINodeStyle {
-  base: string | THREE.Color;
-  highlighted?: string | THREE.Color;
-  [key: string]: string | THREE.Color | undefined;
-}
-
-// create a state machine for each node that will be used to
-// track whether the node is holding stored preset values
-
-export const UI_StateArrayFSMs: Writable< NodeStateFSM []> = writable([]);
-// will be filled with initialising constructor
-export const UI_Styles: Writable<UINodeStyle[]> = writable([]);
-
-export const StoredPresets = writable(); // not used yet
-
-export const CurrentPickedID: Writable<number> = writable(0);
 
 //---- other stuff -------------------
 
 export const PixelDensity: Writable<number> = writable(2);
 
-//---- registered audio parameters -------------------
-export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
-  manifest.parameters
-);
-// registered audio parameters for UI
-export const ParamIds: Writable<string[]> = writable(
-  manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
-);
-
-// export const ParamDefsUI: Writable<{ [key: string]: UIParameterDefinition }> =
-//   writable();
 
 
 

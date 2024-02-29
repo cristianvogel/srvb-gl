@@ -1,6 +1,8 @@
 // Type definitions for
 // Project: NEL-VCS-24
 
+import type { Color } from "three";
+
 export type HostParameterDefinition = {
   paramId: string;
   name: string;
@@ -25,6 +27,22 @@ export type UIParameterDefinition = {
   step: number;
 };
 
+export type Parameter = {
+  paramId: string;
+  label?: string;
+  name: string;
+  value: number;
+};
+
+export type Preset = {
+  index: number;
+  name?: string;
+  color?: Color;
+  parameters: Parameter[];
+};
+
+export type NodeLoadState = 'empty' | 'filled' 
+
 //------------- Native Interops -------------------
 export type NativeMessages = {
   setViewState(value: any);
@@ -35,10 +53,5 @@ export type NativeMessages = {
 
 //------------- Finite States -------------------
 
-export interface StatesArrayActions {
-  toggleNode: (nodeId: number, state?: NodeState) => void;
-}
 
-export type NodeState = ReturnType<typeof createNodeStateFSM>;
 
-//--------

@@ -1,48 +1,32 @@
-<!-- Mockup mini bar -->
+<!--  Welcome to the Mini Bar -->
 <script>
   import Bar from "./Bar.svelte";
-  import { writable } from "svelte/store";
+  import { CurrentPickedId, ShowMiniBars } from "../../stores/stores";
 
-  const preset = writable([
-    {
-      param: 1,
-      name: "Decay",
-      value: 0.9,
-    },
-    {
-      param: 2,
-      name: "Mix",
-      value: 0.2,
-    },
-    {
-      param: 3,
-      name: "Mod",
-      value: 0.5,
-    },
+  export let dataForChart;
 
-    {
-      param: 4,
-      name: "Size",
-      value: 0.95,
-    },
-  ]);
+  const { parameters } = dataForChart;
+  const paramKeys = Object.keys(parameters);
+  const paramValues = paramKeys.map((key) => parameters[key].value);
 </script>
 
 <div style="gap:0">
-  {#each $preset as param, i}
-    <div style='height: 1.25rem'>
-      <p class="minibar-label">{param.name}</p>
-      <svg height="16px">
-        <Bar value={param.value} />
+ 
+    {#each paramKeys as paramKey, i}
+      <div style="height: 1.25rem">
+        <p class="minibar-label">{paramKey}</p>
+        <svg height="16px">
+          <Bar value={paramValues[i]} />
         </svg>
-    </div>
-  {/each}
+      </div>
+    {/each}
+ 
 </div>
 
 <style>
   .minibar-label {
     font-size: 0.75rem;
-    transform: translateY(1rem); ;
+    transform: translateY(1rem);
     margin-left: 0.125rem;
     padding: 0;
     text-align: left;

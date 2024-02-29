@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Controls, guiControls } from "../controls";
+  import Controls from "../controls/Controls.svelte";
   import ParameterLock from "./ParameterLock.svelte";
-  import { ParamDefsHost } from "../stores/stores";
+  import { ParamDefsHost, UI_Controls } from "../stores/stores";
   import type { UIParameterDefinition } from "../../types";
+  
 
   let paramsForUI: { [key: string]: UIParameterDefinition } =
     $ParamDefsHost.reduce(
@@ -22,10 +23,8 @@
       "smooth": { min: 0, max: 1, value: 0.5, step: 0.01 },
     };
 
-    // guiControls returns a Writable store
-    // pull in $guiControls if needed, not 'controlPanel'
-  const controlPanel = guiControls(paramsForUI);
+ UI_Controls.set( paramsForUI ) 
 </script>
 
-<Controls controls={controlPanel} />
+<Controls {UI_Controls} />
 <ParameterLock />
