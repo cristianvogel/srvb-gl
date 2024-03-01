@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     HostState,
     createNodeStateFSM,
+    createNodeClassFSM,
     manifest,
-    type FSM,
-    UI_StateArrayFSMs,
-    UI_Styles,
+    UI_StorageFSMs,
+    UI_ClassFSMs,
     type UINodeStyle,
     NativeMessage,
-    ConsoleText,
   } from "../stores/stores";
-  import type { NodeLoadState } from "../../types";
+  import type { ClassFSM, NodeLoadState, StorageFSM } from "../../types";
 
   // first, ping the host,
   // then build the array of FSMs with a start state that
@@ -19,46 +17,47 @@
   // to empty states.
 
   console.log("Registering messages from host...");
+  $NativeMessage.requestReady();
   $NativeMessage.registerMessagesFromHost();
 
-  let viewState: string[];
+  let restoredState = false;
 
-  // important reactive store here, will either initialise empty state
-  // or restore from host viewState
-  $: viewState =
-    $HostState?.viewState || new Array(manifest.NUMBER_NODES).fill(null);
-
-  $: if ($UI_StateArrayFSMs && $HostState?.viewState) {
-    $ConsoleText = "Stored state:" + JSON.stringify($HostState.viewState);
-    // cablesNodeStateArray.setValue(JSON.stringify($HostState?.viewState));
-  }
-
-  console.log("Starting...");
   statesArrayStoreInit();
 
-  function statesArrayStoreInit() {
+  $: {
+    if ($HostState?.viewState && !restoredState) {
+      if ($UI_StorageFSMs) $UI_StorageFSMs = [];
+      const parsedViewState = JSON.parse($HostState.viewState); // needs to be parsed again here
+      console.log("Got stored state parsed to ", parsedViewState);
+      statesArrayStoreInit(parsedViewState);
+      restoredState = true;
+    }
+  }
+
+  function statesArrayStoreInit(startingStates?: NodeLoadState[]) {
     // we are going to make an array of Finite State Machines to
     // hold the states of each Node in the UI
 
-    type StorageFSM = ReturnType<typeof createNodeStateFSM>;
+ 
 
-    let arr: StorageFSM[] = new Array(manifest.NUMBER_NODES).fill(null);
-    let arrStyle: UINodeStyle[] = [];
+    let arrStorage: StorageFSM[] = new Array(manifest.NUMBER_NODES).fill(null);
+    let arrClass: ClassFSM[] = new Array(manifest.NUMBER_NODES).fill(null);;
 
     for (let i = 0; i < manifest.NUMBER_NODES; i++) {
 
-      // are we restoring from a host viewState?
-      const startingState: NodeLoadState  = viewState ? viewState[i] as NodeLoadState : "empty";
-
+      const startingState: NodeLoadState = startingStates
+        ? startingStates[i]
+        : "empty";
+        
       // create the FSMs from a starting state
-      arr[i] = createNodeStateFSM(startingState, i);
-      arrStyle[i] = {
+      arrStorage[i] = createNodeStateFSM(startingState, i);
+      arrClass[i] = createNodeClassFSM( {
         base: "#000",
-        color: "#111",
-      };
-    }
+        highlighted: "#111",
+      }, i );
+    };
     // make sure the FSMs are put in a Writable before accessing
-    $UI_StateArrayFSMs = arr;
-    $UI_Styles = arrStyle;
+    $UI_StorageFSMs = arrStorage;
+    $UI_ClassFSMs = arrClass;
   }
 </script>

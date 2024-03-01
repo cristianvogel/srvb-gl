@@ -17,14 +17,13 @@
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import {
     getNodeStateAs,
-    UI_Styles,
+    UI_ClassFSMs,
     ShowMiniBars,
     CurrentPickedId,
-    UI_Controls,
-    UI_StoredPresets,
+    UI_Controls
   } from "../stores/stores";
   import type { Preset } from "../../types";
   import { get } from "svelte/store";
@@ -43,9 +42,9 @@
   const bigInstancedMeshPosition = [-1.5, -1, -1];
 
   function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
-    $UI_Styles[nodeIndex].base = colorPick;
+    $UI_ClassFSMs[nodeIndex].base = colorPick;
     let brighter = new THREE_Color(colorPick);
-    $UI_Styles[nodeIndex].highlighted = brighter.addColors(
+    $UI_ClassFSMs[nodeIndex].highlighted = brighter.addColors(
       new THREE_Color(colorPick),
       new THREE_Color("#f00")
     );
@@ -66,17 +65,24 @@
     const data: Snapshot = {
       preset: {
         index: nodeId,
+        color: $UI_ClassFSMs[nodeId],
         name: "Node_" + nodeId,
         parameters: currentSnapshot,
       },
     };
 
-    dispatch("newSnapshot", data);
 
-    const stateAsColor: string = ["base", "highlighted"].at(
-      getNodeStateAs.number(nodeId)
-    )!;
-    o.eventObject.color.set($UI_Styles[nodeId][stateAsColor]);
+
+    dispatch("newSnapshot", data);
+    console.log("Node clicked: ", $UI_ClassFSMs[nodeId]);
+    o.eventObject.color.set($UI_ClassFSMs[nodeId].highlighted);    
+
+      //   const stateAsColor: (() => string ) = function() {
+  //   const stateNumber = getNodeStateAs.number(nodeId) ;
+  //   return ["base", "highlighted"].at(stateNumber) as string;
+  // };
+  //  o.eventObject.color.set($UI_Styles[nodeId][stateAsColor()]);
+
   }
 
   function nodeEnter(o: any) {

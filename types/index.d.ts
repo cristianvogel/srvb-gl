@@ -2,6 +2,7 @@
 // Project: NEL-VCS-24
 
 import type { Color } from "three";
+import type { UINodeStyle } from "../src/stores/stores";
 
 export type HostParameterDefinition = {
   paramId: string;
@@ -37,11 +38,14 @@ export type Parameter = {
 export type Preset = {
   index: number;
   name?: string;
-  color?: Color;
+  color?: UINodeStyle;
   parameters: Parameter[];
 };
 
 export type NodeLoadState = 'empty' | 'filled' 
+
+export type StorageFSM = ReturnType<typeof createNodeStateFSM>;
+export type ClassFSM = ReturnType<typeof createNodeClassFSM>;
 
 //------------- Native Interops -------------------
 export type NativeMessages = {
