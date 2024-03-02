@@ -22,9 +22,13 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    std::function<void(choc::value::Value&)> viewStateChanged = [](choc::value::Value&) {};
+
 private:
     //==============================================================================
     choc::value::Value handleSetParameterValueEvent(const choc::value::ValueView& e);
+
+    void handleSetViewState(const choc::value::ValueView& valueView);
 
     //==============================================================================
     std::unique_ptr<choc::ui::WebView> webView;

@@ -27,7 +27,7 @@ std::string getMimeType(std::string const &ext)
 }
 
 //==============================================================================
-WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &assetDirectory, int width, int height)
+WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &assetDirectory, int /*width*/, int /*height*/)
     : juce::AudioProcessorEditor(proc)
 {
     setSize(800, 494);
@@ -94,6 +94,10 @@ WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &asset
             if (eventName == "setParameterValue" && args.size() > 1) {
                 return handleSetParameterValueEvent(args[1]);
             }
+
+            if (eventName == "setViewState" && args.size() > 1) {
+                handleSetViewState(args[1]);
+            }
         }
 
         return {}; });
@@ -134,12 +138,19 @@ choc::value::Value WebViewEditor::handleSetParameterValueEvent(const choc::value
             {
                 if (pf->paramID.toStdString() == paramId)
                 {
-                    pf->setValueNotifyingHost(v);
+                    pf->setValueNotifyingHost(static_cast<float>(v));
                     break;
                 }
             }
         }
     }
 
-    return choc::value::Value();
+    return {};
+}
+
+void WebViewEditor::handleSetViewState(const choc::value::ValueView &valueView)
+{
+    // Take a copy of the value and pass it to the view state change handler.
+    auto value = choc::value::Value(valueView);
+    viewStateChanged(value);
 }
