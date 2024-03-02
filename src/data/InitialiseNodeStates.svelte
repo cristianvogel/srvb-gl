@@ -8,8 +8,10 @@
     UI_ClassFSMs,
     type UINodeStyle,
     NativeMessage,
+    UI_StoredPresets,
   } from "../stores/stores";
   import type { ClassFSM, NodeLoadState, StorageFSM } from "../../types";
+  import { get } from "svelte/store";
 
   // first, ping the host,
   // then build the array of FSMs with a start state that
@@ -22,42 +24,58 @@
 
   let restoredState = false;
 
-  statesArrayStoreInit();
+  storageFSMsInit();
+  classFSMsInit();
+
 
   $: {
     if ($HostState?.viewState && !restoredState) {
-      if ($UI_StorageFSMs) $UI_StorageFSMs = [];
       const parsedViewState = JSON.parse($HostState.viewState); // needs to be parsed again here
       console.log("Got stored state parsed to ", parsedViewState);
-      statesArrayStoreInit(parsedViewState);
+      storageFSMsInit(parsedViewState.nodes);
+      $UI_StoredPresets = parsedViewState.presets;
       restoredState = true;
     }
   }
 
-  function statesArrayStoreInit(startingStates?: NodeLoadState[]) {
+
+  // I am being really explicit here, with the for loops, because
+  // I have been having so much trouble with the stores not updating
+  // from stored viewState when running in the host.
+
+  function storageFSMsInit(startingStates?: NodeLoadState[]) {
+
+    console.log( 'running states init')
     // we are going to make an array of Finite State Machines to
     // hold the states of each Node in the UI
+      for (let i = 0; i < manifest.NUMBER_NODES; i++) {
+        const s = startingStates ? startingStates[i] || "empty" : "empty";
+        $UI_StorageFSMs[i] = createNodeStateFSM(s, i) 
+      }
+      
+    // make sure the FSMs are put in a Writable before accessing
+    console.log('UI_StorageFSMs', $UI_StorageFSMs)
+  }
 
- 
 
-    let arrStorage: StorageFSM[] = new Array(manifest.NUMBER_NODES).fill(null);
-    let arrClass: ClassFSM[] = new Array(manifest.NUMBER_NODES).fill(null);;
+  function classFSMsInit() {
 
     for (let i = 0; i < manifest.NUMBER_NODES; i++) {
-
-      const startingState: NodeLoadState = startingStates
-        ? startingStates[i]
-        : "empty";
-        
-      // create the FSMs from a starting state
-      arrStorage[i] = createNodeStateFSM(startingState, i);
-      arrClass[i] = createNodeClassFSM( {
+      $UI_ClassFSMs[i] = createNodeClassFSM( {
         base: "#000",
-        highlighted: "#111",
+        highlighted: "#e00",
       }, i );
     };
+
+    for (let i = 0; i < manifest.NUMBER_NODES; i++) {
+      if (get($UI_StorageFSMs[i]) === "empty") {
+        $UI_ClassFSMs[i].empty();
+      } else {
+        $UI_ClassFSMs[i].filled();
+      }
+    }
+
     // make sure the FSMs are put in a Writable before accessing
-    $UI_StorageFSMs = arrStorage;
-    $UI_ClassFSMs = arrClass;
+    console.log('UI_ClassFSMs', $UI_ClassFSMs)
   }
 </script>

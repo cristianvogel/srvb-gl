@@ -159,9 +159,7 @@ function debounce(context: FSM, transition: string, delay: number) {
 // global helper function for the array of FSMs
 export const getNodeStateAs = {
   number: (index: number) => {
-    return Number(
-      String(get(get(UI_StorageFSMs)[index])) === "filled" ? 1 : 0
-    );
+    return Number(String(get(get(UI_StorageFSMs)[index])) === "filled" ? 1 : 0);
   },
   key: (index: number) => {
     return String(get(get(UI_StorageFSMs)[index]));
@@ -211,19 +209,31 @@ export const UpdateStateFSM = fsm("ready", {
   },
 });
 
-export function createNodeClassFSM( colors: any, index: number) {
+export function createNodeClassFSM(colors: any, index: number) {
   return fsm("empty", {
     empty: {
-      toggle( eventObject ) {
-        eventObject.set( colors.highlighted )
+      assign(c) {
+        console.log( "assigning colors " )
+        colors = c;
+      },
+      paint(eventObject) {
+        eventObject.color.set(colors.base);
+        return "empty";
+      },
+      fill(eventObject) {
+        eventObject.color.set(colors.highlighted);
         return "filled";
       },
     },
     filled: {
-      toggle( eventObject ) {
-        eventObject.set( colors.base )
-        return "empty";
+      assign(c) {
+        colors = c;
       },
+      paint(eventObject) {
+        eventObject.color.set(colors.highlighted);
+        return "filled";
+      },
+    
     },
   });
 }
@@ -232,15 +242,9 @@ export function createNodeClassFSM( colors: any, index: number) {
 export function createNodeStateFSM(initial: NodeLoadState, index: number) {
   return fsm(initial, {
     empty: {
-      toggleStyle() {
-        get(UI_ClassFSMs)[index] = "highlighted";
-        return "filled";
-      },
-
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
-
       storePreset(p) {
         get(UI_StoredPresets)[index] = p;
         // console.log( 'store preset called inside FSM ', index, ' with preset: ', p );
@@ -251,20 +255,13 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       },
     },
     filled: {
-      toggleStyle() {
-        get(UI_ClassFSMs)[index] = "base";
-        return "empty";
-      },
-
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
-
       storePreset(p) {
         get(UI_StoredPresets)[index] = p;
         return "filled";
       },
-
       resetTo(state) {
         return state;
       },

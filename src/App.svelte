@@ -11,6 +11,7 @@
     ShowMiniBars,
     UI_StorageFSMs,
     UI_ClassFSMs,
+    UI_StoredPresets,
   } from "./stores/stores";
   import { get } from "svelte/store";
   //import ParameterChange from "./data/ParameterChange.svelte";
@@ -18,17 +19,17 @@
   function updateStateFSM(e: any) {
     const { preset } = e.detail;
 
-    const { index, color, name, parameters } = preset;
+    const { index, color, name, parameters, eventObject } = preset;
 
-    // had to manually get the current state key of each store
-    if ($UI_StorageFSMs !== $HostState?.viewState) {
-      $NativeMessage.setViewState($UI_StorageFSMs.map((fsm) => get(fsm)));
-    }
-    $UI_StorageFSMs[preset.index].storePreset(preset);
-    $UI_ClassFSMs[preset.index].toggleStyle();
+    $UI_StorageFSMs[index].storePreset(preset);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
-    $UI_ClassFSMs = $UI_ClassFSMs;
     $ShowMiniBars = true;
+    // had to manually get the current state key of each store
+    let persisentState = {
+      nodes: $UI_StorageFSMs.map((fsm) => get(fsm)),
+      presets: $UI_StoredPresets,
+    };
+    $NativeMessage.setViewState(persisentState);
   }
 </script>
 

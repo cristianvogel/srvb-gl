@@ -1,10 +1,10 @@
 <script lang="ts">
   import RayCastPointer from "./RayCastPointer.svelte";
 
-  import { T, useThrelte } from "@threlte/core";
+  import { T, useTask, useThrelte, watch } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
-  import { Vector3, type Vector3Tuple, Color as THREE_Color } from "three";
+  import { Color as THREE_Color } from "three";
   import {
     Instance,
     InstancedMesh,
@@ -14,24 +14,35 @@
     Text,
     PortalTarget,
   } from "@threlte/extras";
-  import { tweened } from "svelte/motion";
-  import { cubicOut } from "svelte/easing";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
-  import { createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import {
-    getNodeStateAs,
     UI_ClassFSMs,
     ShowMiniBars,
     CurrentPickedId,
-    UI_Controls
+    UI_Controls,
+    UI_StorageFSMs,
   } from "../stores/stores";
   import type { Preset } from "../../types";
   import { get } from "svelte/store";
 
-  const { size } = useThrelte();
   const dispatch = createEventDispatcher();
 
-  $: console.log("MainView ►" + $size);
+  const { scene } = useThrelte();
+
+  watch(UI_StorageFSMs, (storage) => {
+    let gridComponents = scene.children.filter(
+      (component) => component.name === "grid"
+    );
+    gridComponents.forEach((gridComponent) => {
+      let cubes = gridComponent.children.filter((cube) => cube.name === "cube");
+      cubes.forEach((cube, i) => {
+        if (get(storage[i]) === "filled") {
+          $UI_ClassFSMs[i].fill(cube);
+        } 
+      });
+    });
+  });
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(28, gradient).map(css);
@@ -41,29 +52,31 @@
   const layers = [1]; // layers of nodes
   const bigInstancedMeshPosition = [-1.5, -1, -1];
 
-  function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
-    $UI_ClassFSMs[nodeIndex].base = colorPick;
-    let brighter = new THREE_Color(colorPick);
-    $UI_ClassFSMs[nodeIndex].highlighted = brighter.addColors(
-      new THREE_Color(colorPick),
-      new THREE_Color("#f00")
-    );
+  function assignNodeColorStates(
+    o: any,
+    nodeIndex: number,
+    colorPick: string
+  ): void {
+    // console.log("REF?", o.ref, nodeIndex);
+    const base = new THREE_Color(colorPick);
+    const highlighted = new THREE_Color("red");
+    $UI_ClassFSMs[nodeIndex].assign({ base, highlighted });
   }
 
   function nodeClick(o: any) {
-
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
 
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
     const currentSnapshot = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
-    
+
     type Snapshot = {
       preset: Preset;
     };
 
     const data: Snapshot = {
       preset: {
+        eventObject: o.eventObject,
         index: nodeId,
         color: $UI_ClassFSMs[nodeId],
         name: "Node_" + nodeId,
@@ -71,18 +84,7 @@
       },
     };
 
-
-
     dispatch("newSnapshot", data);
-    console.log("Node clicked: ", $UI_ClassFSMs[nodeId]);
-    o.eventObject.color.set($UI_ClassFSMs[nodeId].highlighted);    
-
-      //   const stateAsColor: (() => string ) = function() {
-  //   const stateNumber = getNodeStateAs.number(nodeId) ;
-  //   return ["base", "highlighted"].at(stateNumber) as string;
-  // };
-  //  o.eventObject.color.set($UI_Styles[nodeId][stateAsColor()]);
-
   }
 
   function nodeEnter(o: any) {
@@ -95,13 +97,13 @@
   }
 
   function nodeLeave(eventObject: any) {
-   $ShowMiniBars = false;
+    $ShowMiniBars = false;
   }
 
   interactivity();
-
 </script>
 
+<div id="updater" />
 <T.PerspectiveCamera
   makeDefault
   args={[50, 1, 0.1, 100]}
@@ -136,6 +138,7 @@
         }}
 
         <Text
+          name="label"
           scale={4 / 6}
           text={`${nodeIndex}`}
           characters="0123456789.►𝌺-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
@@ -143,8 +146,9 @@
           color={palette[colorPick - 2]}
         />
         <Instance
-          on:create={(e) =>
-            assignNodeColorStates(nodeIndex, palette[colorPick])}
+          name="cube"
+          on:create={(o) =>
+            assignNodeColorStates(o, nodeIndex, palette[colorPick])}
           on:click={(e) => {
             e.stopPropagation();
             nodeClick(e);

@@ -1,7 +1,7 @@
 // Type definitions for
 // Project: NEL-VCS-24
 
-import type { Color } from "three";
+import type { Color, Object3D } from "three";
 import type { UINodeStyle } from "../src/stores/stores";
 
 export type HostParameterDefinition = {
@@ -40,6 +40,7 @@ export type Preset = {
   name?: string;
   color?: UINodeStyle;
   parameters: Parameter[];
+  eventObject: Object3D;
 };
 
 export type NodeLoadState = 'empty' | 'filled' 
