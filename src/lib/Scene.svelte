@@ -25,7 +25,7 @@
     CurrentFocusId,
     FrameCount,
   } from "../stores/stores";
-  import type { HostParameterDefinition, HostParameterMap, Preset } from "../../types";
+  import type { HostParameterMap, Preset } from "../../types";
   import { get } from "svelte/store";
 
   const dispatch = createRawEventDispatcher();

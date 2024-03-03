@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Writable } from "svelte/store";
-  import ParameterChange from "../data/ParameterChange.svelte";
+  import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
   import { ConsoleText, NativeMessage, UpdateStateFSM } from "../stores/stores";
 
   export let UI_Controls: Writable<any>;
@@ -59,7 +59,7 @@
   }
 </script>
 
-<ParameterChange controls = { UI_Controls } />
+<ParameterSynchronisation />
 
 {#if isNotEmpty}
   <div class="sidebar">

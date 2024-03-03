@@ -14,24 +14,27 @@
     UI_Controls,
     FrameCount,
     CurrentVectorInterp,
-
     ConsoleText
-
   } from "./stores/stores";
 
   import { get } from "svelte/store";
   import { Interpolation } from "./lib/interp";
-  import type { Preset, GenericUIParamSettings, HostParameterMap } from "../types";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
+  import {  wrapAsPreset } from "./utils/utils";
 
-  let run: boolean;
   let interpolator: Interpolation;
 
   watch(FrameCount, () => {
-    interpolator?.update(get(FrameCount));
+    interpolator?.update($FrameCount);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
-    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp)
   });
+
+  watch(CurrentVectorInterp, ()=> {
+    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp)
+  
+  //  $NativeMessage.requestParamValueUpdate()
+  }
+  )
 
   function interpolatePreset(e: any) {
     const controlsSnapshot = wrapAsPreset($UI_Controls);
@@ -59,15 +62,8 @@
     $NativeMessage.setViewState(persisentState);
   }
 
-  function wrapAsPreset(settings: HostParameterMap ): Preset {
-    const preset = {
-      parameters: settings,
-      getParameterValues: () => {
-        return Object.keys(settings).map((p) => settings[p].value);
-      },
-    };
-    return preset;
-  }
+
+  
 </script>
 
 <InitialiseNodeStates />

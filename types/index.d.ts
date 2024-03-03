@@ -5,12 +5,15 @@ import type { Color, Object3D } from "three";
 import type { UINodeStyle } from "../src/stores/stores";
 
 export type HostParameterMap = {
-  [paramId: string]: HostParameterDefinition;
+
+  [key: string]: any;
+  paramId: any;
+  value: number;
 };
 
 export type LocalManifest = {
   window: { width: number; height: number };
-  parameters: HostParameterMap
+  parameters: any[];
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
   sampleRate?: number;
@@ -24,11 +27,10 @@ export type GenericUIParamSettings = {
   step: number;
 };
 
-export type Parameter = {
-  paramId: string;
-  label?: string;
-  name: string;
+export type ParameterDef = {
+  paramId: any;
   value: number;
+  [key: string]: any;
 };
 
 export type Preset = {
