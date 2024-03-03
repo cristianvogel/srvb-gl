@@ -17,9 +17,11 @@ import type {
   NodeLoadState,
   Preset,
   StorageFSM,
+  GenericUIParamSettings,
 } from "../../types";
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import type { Vec } from "@thi.ng/vectors";
 
 //-------- new Threlte related stores --------------------
 export const RayCastPointerPosition: Writable<Vector2Tuple> = writable([0, 0]);
@@ -27,6 +29,12 @@ export const ShowMiniBars: Writable<boolean> = writable(false);
 export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
+export const FrameCount: Writable<number> = writable(0);
+
+//---- Interpolation related stores -------------------
+
+export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
+
 
 // ---- native interops -------------------
 
@@ -100,6 +108,7 @@ export const manifest: LocalManifest = {
   viewState: new Array(NUMBER_NODES).fill(0),
 };
 
+export const CurrentControlSettings: Writable<GenericUIParamSettings[]> = writable([]);
 //---- registered audio parameters -------------------
 export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
   manifest.parameters
@@ -134,10 +143,11 @@ export const UI_StoredPresets: Writable<Preset[]> = writable(
 );
 // Global export of current RayCast target
 export const CurrentPickedId: Writable<number> = writable(0);
+export const CurrentFocusId: Writable<number> = writable(0);
 // // todo: annotate, this holds UI control panel parameters
 // export const UI_Params: Writable<any> = writable({})
 // Sidebar controls
-export const UI_Controls: Writable<any> = writable({});
+export const UI_Controls: Writable<HostParameterDefinitions> = writable({});
 
 // a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
@@ -246,10 +256,11 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
       storePreset(p) {
+        console.log( 'store preset data', p )
         get(UI_StoredPresets)[index] = p;
-        // console.log( 'store preset called inside FSM ', index, ' with preset: ', p );
         return "filled";
       },
+
       resetTo(state) {
         return state;
       },
@@ -258,6 +269,10 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
+      getPreset(i) {
+        return get(UI_StoredPresets)[i];
+      },
+      
       storePreset(p) {
         get(UI_StoredPresets)[index] = p;
         return "filled";

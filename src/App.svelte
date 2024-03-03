@@ -1,26 +1,53 @@
 <script lang="ts">
-  import { Canvas } from "@threlte/core";
+  import { Canvas, useTask, watch } from "@threlte/core";
   import Scene from "./lib/Scene.svelte";
   import CssScene from "./CSS2DRenderer/CssScene.svelte";
   import Sidebar from "./lib/Sidebar.svelte";
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
   import Container from "./lib/Container.svelte";
   import {
-    HostState,
+    CurrentPickedId,
     NativeMessage,
     ShowMiniBars,
     UI_StorageFSMs,
-    UI_ClassFSMs,
     UI_StoredPresets,
+    UI_Controls,
+    FrameCount,
+    CurrentVectorInterp,
+
+    ConsoleText
+
   } from "./stores/stores";
+
   import { get } from "svelte/store";
-  //import ParameterChange from "./data/ParameterChange.svelte";
+  import { Interpolation } from "./lib/interp";
+  import type { Preset, GenericUIParamSettings, HostParameterMap } from "../types";
+  import { FORMATTER, type Vec } from "@thi.ng/vectors";
 
-  function updateStateFSM(e: any) {
-    const { preset } = e.detail;
+  let run: boolean;
+  let interpolator: Interpolation;
 
-    const { index, color, name, parameters, eventObject } = preset;
+  watch(FrameCount, () => {
+    interpolator?.update(get(FrameCount));
+    CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
+    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp)
+  });
 
+  function interpolatePreset(e: any) {
+    const controlsSnapshot = wrapAsPreset($UI_Controls);
+    const presetTuple = {
+      a: controlsSnapshot,
+      b: $UI_StoredPresets[$CurrentPickedId],
+    };
+    interpolator = new Interpolation(presetTuple, true);
+    $FrameCount = 0
+    interpolator.reset(0)
+    controlsSnapshot.parameters
+    console.log("interpolater created");
+  }
+
+  function updateStateFSM(preset: any) {
+    const { index } = preset;
     $UI_StorageFSMs[index].storePreset(preset);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
@@ -31,6 +58,16 @@
     };
     $NativeMessage.setViewState(persisentState);
   }
+
+  function wrapAsPreset(settings: HostParameterMap ): Preset {
+    const preset = {
+      parameters: settings,
+      getParameterValues: () => {
+        return Object.keys(settings).map((p) => settings[p].value);
+      },
+    };
+    return preset;
+  }
 </script>
 
 <InitialiseNodeStates />
@@ -38,7 +75,10 @@
   <div id="css-renderer-target" />
   <div class="w-full" id="main">
     <Canvas autoRender={true}>
-      <Scene on:newSnapshot={updateStateFSM} />
+      <Scene
+        on:newSnapshot={updateStateFSM}
+        on:interpolatePreset={interpolatePreset}
+      />
       <CssScene />
     </Canvas>
     <Sidebar />

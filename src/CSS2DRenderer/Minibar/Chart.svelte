@@ -1,8 +1,6 @@
 <!--  Welcome to the Mini Bar -->
 <script>
   import Bar from "./Bar.svelte";
-  import { CurrentPickedId, ShowMiniBars } from "../../stores/stores";
-
   export let dataForChart;
 
   const { parameters } = dataForChart;

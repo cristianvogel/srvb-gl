@@ -123,7 +123,7 @@
 
   pre {
     font-size: 0.75rem;
-    color: slategray;
+    color: chartreuse;
   }
   
   .sidebar {
@@ -192,7 +192,7 @@
 
   .sidebar .readout {
     font-size: 0.75rem;
-    color: slategray;
+    color: lightblue;
   }
 
   .sidebar .heading {

@@ -4,24 +4,20 @@
 import type { Color, Object3D } from "three";
 import type { UINodeStyle } from "../src/stores/stores";
 
-export type HostParameterDefinition = {
-  paramId: string;
-  name: string;
-  min: number;
-  max: number;
-  defaultValue: number;
+export type HostParameterMap = {
+  [paramId: string]: HostParameterDefinition;
 };
 
 export type LocalManifest = {
   window: { width: number; height: number };
-  parameters: HostParameterDefinition[];
+  parameters: HostParameterMap
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
   sampleRate?: number;
   viewState?: any;
 };
 
-export type UIParameterDefinition = {
+export type GenericUIParamSettings = {
   min: number;
   max: number;
   value: number;
@@ -36,11 +32,12 @@ export type Parameter = {
 };
 
 export type Preset = {
-  index: number;
+  index?: number;
   name?: string;
   color?: UINodeStyle;
-  parameters: Parameter[];
-  eventObject: Object3D;
+  parameters: HostParameterMap;
+  eventObject?: Object3D;
+  getParameterValues: () => Vec;
 };
 
 export type NodeLoadState = 'empty' | 'filled' 

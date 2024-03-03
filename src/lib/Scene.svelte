@@ -1,7 +1,7 @@
 <script lang="ts">
   import RayCastPointer from "./RayCastPointer.svelte";
 
-  import { T, useTask, useThrelte, watch } from "@threlte/core";
+  import { T, createRawEventDispatcher, useTask, useThrelte, watch } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
   import { Color as THREE_Color } from "three";
@@ -22,13 +22,18 @@
     CurrentPickedId,
     UI_Controls,
     UI_StorageFSMs,
+    CurrentFocusId,
+    FrameCount,
   } from "../stores/stores";
-  import type { Preset } from "../../types";
+  import type { HostParameterDefinition, HostParameterMap, Preset } from "../../types";
   import { get } from "svelte/store";
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createRawEventDispatcher();
 
   const { scene } = useThrelte();
+
+  useTask( 'frameCOUNT',  (delta) => { $FrameCount++%10000 } )
+
 
   watch(UI_StorageFSMs, (storage) => {
     let gridComponents = scene.children.filter(
@@ -53,7 +58,6 @@
   const bigInstancedMeshPosition = [-1.5, -1, -1];
 
   function assignNodeColorStates(
-    o: any,
     nodeIndex: number,
     colorPick: string
   ): void {
@@ -63,37 +67,43 @@
     $UI_ClassFSMs[nodeIndex].assign({ base, highlighted });
   }
 
-  function nodeClick(o: any) {
+
+/* Interactivity
+//////////////// 
+*/
+// store a preset
+  function nodeRightClick(o: any) {
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
-
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
-    const currentSnapshot = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
-
-    type Snapshot = {
-      preset: Preset;
-    };
-
-    const data: Snapshot = {
-      preset: {
+    const controlsSnapshot:HostParameterMap = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
+    console.log( 'snapshot->', controlsSnapshot)
+    const preset: Preset = {
         eventObject: o.eventObject,
         index: nodeId,
-        color: $UI_ClassFSMs[nodeId],
         name: "Node_" + nodeId,
-        parameters: currentSnapshot,
-      },
+        parameters: controlsSnapshot,
+        getParameterValues: () => {
+          return Object.keys(controlsSnapshot).map((p) => controlsSnapshot[p].value);
+        },
     };
+    dispatch("newSnapshot", preset);
+  }
 
-    dispatch("newSnapshot", data);
+
+  // interpolate preset
+  function nodeClick(o: any) {
+    $CurrentPickedId = o.instanceId;
+    dispatch("interpolatePreset", true);
   }
 
   function nodeEnter(o: any) {
-    $CurrentPickedId = o.instanceId;
+    $CurrentFocusId = o.instanceId
   }
 
   function nodePointer(o: any) {
     $ShowMiniBars = true;
-    $CurrentPickedId = o.instanceId;
+    $CurrentFocusId = o.instanceId
   }
 
   function nodeLeave(eventObject: any) {
@@ -101,12 +111,13 @@
   }
 
   interactivity();
+
 </script>
 
 <div id="updater" />
 <T.PerspectiveCamera
   makeDefault
-  args={[50, 1, 0.1, 100]}
+  args={[40, 1, 0.1, 100]}
   position={[elementsPerSide, elementsPerSide, elementsPerSide]}
 >
   <OrbitControls
@@ -141,17 +152,23 @@
           name="label"
           scale={4 / 6}
           text={`${nodeIndex}`}
-          characters="0123456789.►𝌺-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+          characters="0123456789.►-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
           position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
           color={palette[colorPick - 2]}
         />
         <Instance
           name="cube"
           on:create={(o) =>
-            assignNodeColorStates(o, nodeIndex, palette[colorPick])}
+            assignNodeColorStates(nodeIndex, palette[colorPick])}
           on:click={(e) => {
+            // left mouse button sends
             e.stopPropagation();
             nodeClick(e);
+          }}
+          on:contextmenu={(e) => {
+            // right mouse button stores
+            e.stopPropagation();
+            nodeRightClick(e);
           }}
           on:pointerenter={nodeEnter}
           on:pointerleave={nodeLeave}
