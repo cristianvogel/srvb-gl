@@ -1,6 +1,6 @@
 <script lang="ts">
   import { get } from "svelte/store";
-  import type { Preset } from "../../types";
+  import type { UI_Preset } from "../../types";
   import {
     CurrentFocusId,
     ShowMiniBars,
@@ -8,9 +8,10 @@
   } from "../stores/stores";
   import Chart from "./Minibar/Chart.svelte";
 
-  let preset: Preset ;
+  let preset: UI_Preset ;
 
-  $: preset = $UI_StoredPresets[$CurrentFocusId];
+  $: preset= $UI_StoredPresets[$CurrentFocusId];
+ 
 
 </script>
 

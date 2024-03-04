@@ -1,21 +1,21 @@
 import { HERMITE_V, VEC, ramp, clamp } from "@thi.ng/ramp";
-import type { Preset } from "../../types/index.js";
+import type { UI_Preset } from "../../types/index.js";
 import { CurrentVectorInterp } from "../stores/stores";
 import { get } from "svelte/store";
 import type { Vec } from "@thi.ng/vectors";
 
 export class Interpolation {
-  presets: { a: Preset; b: Preset };
+  presets: { a: UI_Preset; b: UI_Preset };
   run: boolean;
 
-  a: Preset;
-  b: Preset;
+  a: UI_Preset;
+  b: UI_Preset;
 
   private t: number;
   private _inter: ReturnType<typeof ramp> | null = null;
 
-  constructor(presets?: { a: Preset; b: Preset }, run: boolean = false) {
-    this.presets = presets || { a: {} as Preset, b: {} as Preset };
+  constructor(presets?: { a: UI_Preset; b: UI_Preset }, run: boolean = false) {
+    this.presets = presets || { a: {} as UI_Preset, b: {} as UI_Preset };
     this.run = run;
     this.a = this.presets.a;
     this.b = this.presets.b;
@@ -23,7 +23,7 @@ export class Interpolation {
     this._inter = null;
   }
 
-  inter(a: Preset, b: Preset) {
+  inter(a: UI_Preset, b: UI_Preset) {
     let startVec: Vec;
     if (get(CurrentVectorInterp)) {
       startVec = get(CurrentVectorInterp);

@@ -1,17 +1,26 @@
 import type { Vec } from "@thi.ng/vectors";
-import type { HostParameterMap, Preset } from "../../types";
+import type {
+  UI_ParameterController,
+  UI_Preset,
+} from "../../types";
 
-export function extractValuesFrom(settings: HostParameterMap ): Vec {
-    return Object.keys(settings).map((p) => settings[p].value)
-   };
+export function extractValuesFrom(settings: UI_ParameterController[]): Vec {
+  return Object.keys(settings).map((p: string) => settings[p].value);
+}
 
-
-  export function wrapAsPreset(settings: HostParameterMap ): Preset {
-    const preset = {
-      parameters: settings,
-      getParameterValues: () => {
-        return  extractValuesFrom(settings) 
-      },
-    };
-    return preset;
-  }
+export function wrapAsPreset(settings: UI_ParameterController[]): UI_Preset {
+  const preset: UI_Preset = {
+    parameters: settings,
+    getParameterValues: function() {
+      return extractValuesFrom(this.parameters);
+    },
+    setParameterValues: function(values: Vec) {
+      this.parameters.forEach((controller: UI_ParameterController, i: number) => {
+        Object.keys(controller).forEach((paramId: string) => {
+          controller[paramId].value = values[i];
+        });
+      });
+    },
+  };
+  return preset;
+}

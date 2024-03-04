@@ -9,7 +9,6 @@
 </script>
 
 <div style="gap:0">
- 
     {#each paramKeys as paramKey, i}
       <div style="height: 1.25rem">
         <p class="minibar-label">{paramKey}</p>
@@ -18,8 +17,8 @@
         </svg>
       </div>
     {/each}
- 
 </div>
+
 
 <style>
   .minibar-label {

@@ -1,123 +1,76 @@
 <script lang="ts">
   import type { Writable } from "svelte/store";
   import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
-  import { ConsoleText, NativeMessage, UpdateStateFSM } from "../stores/stores";
-
-  export let UI_Controls: Writable<any>;
-
+  import { ConsoleText, NativeMessage, UI_StorageFSMs, UpdateStateFSM } from "../stores/stores";
+  import * as v from "@thi.ng/vectors";
+  import type { UI_Slider } from "../../types";
+ 
+  let entries:[];
+  export let controlStore: Writable<Map<string, UI_Slider>>;
   
-  const entries: any = Object.entries($UI_Controls);
-
-  const isNotEmpty = entries.length > 0;
-
-  const is = {
-    number: (value: any) => typeof value === "number",
-    boolean: (value: any) => typeof value === "boolean",
-    text: (value: any) => typeof value === "string" && !value.startsWith("#"),
-    color: (value: any) => typeof value === "string" && value.startsWith("#"),
-    range: (value: any) => typeof value === "object" && value.step, // && param
-  };
-
   function updateControls(e: Event) {
-    let { value, type, dataset, checked, step, min, max } =
+    console.log( 'ok' )
+    let { value, dataset, step, min, max } =
       e.target as HTMLInputElement;
 
-    let key = dataset.key!;
-    switch (type) {
-      case "range":
-        if (e.type === "wheel") {
-          let direction = (e as WheelEvent).deltaY < 0 ? "up" : "down";
-          if (direction === "up") {
-            $UI_Controls[key].value < max && ($UI_Controls[key].value += +step);
-          } else {
-            $UI_Controls[key].value > min && ($UI_Controls[key].value -= +step);
-          }
-        } else {
-          $UI_Controls[key].value = +value;
-        }
-        break;
+    let key = dataset.key! as string;
 
-      case "checkbox":
-        $UI_Controls[key] = checked;
-        break;
-
-      case "number":
-        $UI_Controls[key] = +value;
-        break;
-
-      default:
-        $UI_Controls[key] = value;
-    } 
  
     if ($UpdateStateFSM !== "updatingUI") {
     // todo: locks
     //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
-
-    $NativeMessage.requestParamValueUpdate(key, $UI_Controls[key].value);
+    $NativeMessage.requestParamValueUpdate(key, $controlStore.get(key)?.value as number);
     }
-      
   }
+      
+
+  function randomisePresets() {
+    const randomVector =  ()=> v.randDistrib4([]);
+     $UI_StorageFSMs.forEach( (fsm) => {
+      fsm.storePreset( v.abs4([],randomVector()) );
+      fsm.randomise();
+     })
+     $UI_StorageFSMs = $UI_StorageFSMs
+    }
 </script>
 
 <ParameterSynchronisation />
 
-{#if isNotEmpty}
   <div class="sidebar">
     <pre>{$ConsoleText}</pre>
+    <button class='button' on:click={ randomisePresets }>Randomise</button>
     <h3 class="heading">Controls</h3>
-
-    {#each entries as [label, value]}
-      {#if is.range(value)}
-        <label>
-          {label}
-          <input
-            id="sidebar_range"
-            on:input={updateControls}
-            on:wheel={updateControls}
-            data-key={label}
-            value={$UI_Controls[label].value}
-            min={$UI_Controls[label].min}
-            max={$UI_Controls[label].max}
-            step={$UI_Controls[label].step}
-            type="range"
-          />
-          <div class="readout">
-            {Number($UI_Controls[label].value).toFixed(2)}
-          </div>
-          <div
-            id="sidebar_range_lock"
-            data-key={"lock_" + label}
-            class="col-start-5 col-span-1 text-xs my-1 text-green-500"
-          ></div>
-        </label>
-      {/if}
-
-      {#if is.text(value)}
-        <label>
-          {label}
-          <input
-            on:input={updateControls}
-            checked={$UI_Controls[label]}
-            data-key={label}
-            type="text"
-          />
-        </label>
-      {/if}
-
-      {#if is.color(value)}
-        <label>
-          {label}
-          <input
-            on:input={updateControls}
-            value={$UI_Controls[label]}
-            data-key={label}
-            type="color"
-          />
-        </label>
-      {/if}
+    
+ {#if $controlStore.size }
+    {#each $controlStore as control, i}
+    {@const paramId = control[0] }
+    {@const { value, min, max, step, index } = control[1] }
+    <label>
+      {paramId}
+      <input
+          id="sidebar_range"
+          on:input={updateControls}
+          on:wheel={updateControls}
+          data-key={paramId}
+          value = {value}
+          min = {min}
+           max = {max}
+          step = {step}
+          type="range"
+        />
+        <div class="readout">
+          {Number(value).toFixed(2)}
+        </div>
+        <div
+          id="sidebar_range_lock"
+          data-key={"lock_" + paramId}
+          class="col-start-5 col-span-1 text-xs my-1 text-green-500"
+        ></div>
+      </label>
     {/each}
+    {/if}
   </div>
-{/if}
+
 
 <style>
 

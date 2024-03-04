@@ -15,7 +15,6 @@
     PortalTarget,
   } from "@threlte/extras";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
-  import { createEventDispatcher } from "svelte";
   import {
     UI_ClassFSMs,
     ShowMiniBars,
@@ -25,14 +24,14 @@
     CurrentFocusId,
     FrameCount,
   } from "../stores/stores";
-  import type { HostParameterMap, Preset } from "../../types";
+  import type { HostParameter, UI_Preset } from "../../types";
   import { get } from "svelte/store";
 
   const dispatch = createRawEventDispatcher();
 
   const { scene } = useThrelte();
 
-  useTask( 'frameCOUNT',  (delta) => { $FrameCount++%10000 } )
+  useTask( 'frameCOUNT',  (delta) => { $FrameCount++%10000; } )
 
 
   watch(UI_StorageFSMs, (storage) => {
@@ -76,9 +75,9 @@
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
-    const controlsSnapshot:HostParameterMap = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
+    const controlsSnapshot:HostParameter = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
     console.log( 'snapshot->', controlsSnapshot)
-    const preset: Preset = {
+    const preset: UI_Preset = {
         eventObject: o.eventObject,
         index: nodeId,
         name: "Node_" + nodeId,
@@ -98,6 +97,7 @@
   }
 
   function nodeEnter(o: any) {
+    $ShowMiniBars = true;
     $CurrentFocusId = o.instanceId
   }
 
@@ -106,7 +106,7 @@
     $CurrentFocusId = o.instanceId
   }
 
-  function nodeLeave(eventObject: any) {
+  function nodeLeave(o: any) {
     $ShowMiniBars = false;
   }
 
@@ -132,7 +132,7 @@
     panSpeed="0.05"
   />
 </T.PerspectiveCamera>
-
+<RayCastPointer />
 <InstancedMesh position={bigInstancedMeshPosition} name="grid">
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
   <T.MeshStandardMaterial />
@@ -175,7 +175,7 @@
           on:pointermove={nodePointer}
           color={palette[colorPick]}
           position={[pos.x, pos.y, pos.z]}
-          renderOrder={x + y + z}
+          
         />
       {/each}
     {/each}
@@ -183,7 +183,7 @@
   <PortalTarget id="nodes" />
 </InstancedMesh>
 
-<RayCastPointer />
+
 
 <T.DirectionalLight position={[0, 8, 0]} />
 <T.AmbientLight intensity={0.7} />

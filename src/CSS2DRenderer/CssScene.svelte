@@ -12,8 +12,6 @@
   const element = document.querySelector('#css-renderer-target') as HTMLElement
   $CSSRenderer = new CSS2DRenderer( { element })
   $CSSRenderer.setSize($size.width, $size.height)
-
-  $:console.log( 'CssScene ►' + $CSSRenderer.getSize() )
   
 
   // We are running two renderers, and don't want to run
@@ -45,8 +43,6 @@
       autoInvalidate: false
     }
   )
-
-
 </script>
 
 

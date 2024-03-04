@@ -11,13 +11,14 @@ import fsm from "svelte-fsm";
 
 import type {
   ClassFSM,
-  HostParameterDefinition,
   LocalManifest,
   NativeMessages,
   NodeLoadState,
-  Preset,
+  UI_Preset,
   StorageFSM,
-  GenericUIParamSettings,
+  UI_Slider,
+  HostParameter,
+  UI_ParameterController,
 } from "../../types";
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
@@ -108,14 +109,14 @@ export const manifest: LocalManifest = {
   viewState: new Array(NUMBER_NODES).fill(0),
 };
 
-export const CurrentControlSettings: Writable<GenericUIParamSettings[]> = writable([]);
+export const CurrentControlSettings: Writable<UI_Slider[]> = writable([]);
 //---- registered audio parameters -------------------
-export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
+export const ParamDefsHost: Writable<HostParameter[]> = writable(
   manifest.parameters
 );
 // registered audio parameters for UI
 export const ParamIds: Writable<string[]> = writable(
-  manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
+  manifest.parameters.map((p: HostParameter) => p.paramId)
 );
 
 //--- parameter and presets stores -------------------
@@ -138,16 +139,18 @@ export const UI_StorageFSMs: Writable<StorageFSM[]> = writable([]);
 // Seperate store for Class and Styles
 export const UI_ClassFSMs: Writable<ClassFSM[]> = writable([]);
 // Seperate store for Presets
-export const UI_StoredPresets: Writable<Preset[]> = writable(
+export const UI_StoredPresets: Writable<UI_Preset[]> = writable(
   Array(NUMBER_NODES).fill({ index: -1, name: "-1", parameters: {} })
 );
+// Sidebar controls
+//export const UI_Controls: Writable<UI_ParameterController[]> = writable();
+export const UI_Controls: Writable<Map<string, UI_Slider>> = writable(new Map());
+
 // Global export of current RayCast target
 export const CurrentPickedId: Writable<number> = writable(0);
 export const CurrentFocusId: Writable<number> = writable(0);
 // // todo: annotate, this holds UI control panel parameters
 // export const UI_Params: Writable<any> = writable({})
-// Sidebar controls
-export const UI_Controls: Writable<HostParameterDefinitions> = writable({});
 
 // a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
@@ -271,8 +274,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       },
       getPreset(i) {
         return get(UI_StoredPresets)[i];
-      },
-      
+      }, 
       storePreset(p) {
         get(UI_StoredPresets)[index] = p;
         return "filled";

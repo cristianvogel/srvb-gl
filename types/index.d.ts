@@ -4,43 +4,54 @@
 import type { Color, Object3D } from "three";
 import type { UINodeStyle } from "../src/stores/stores";
 
-export type HostParameterMap = {
-
-  [key: string]: any;
+export type HostParameter = {
   paramId: any;
-  value: number;
+  name?: string;
+  value?: number;
+  min?: number;
+  max?: number;
+  defaultValue?: number;
+};
+
+export interface UI_ParameterController {
+ [paramId: string]:  UI_Slider
+};
+
+export type UI_Slider = {
+  index: number | undefined;
+  min: number | undefined;
+  max: number | undefined;
+  value: number | undefined;
+  step: number | undefined;
+};
+
+export interface UI_Preset {
+  index?: number;
+  name?: string;
+  color?: UINodeStyle;
+  parameters: UI_ParameterController[];
+  eventObject?: Object3D;
+  getParameterValues?: () => Vec;
+  setParameterValues?: (values: Vec) => void;
 };
 
 export type LocalManifest = {
   window: { width: number; height: number };
-  parameters: any[];
+  parameters: HostParameter[];
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
   sampleRate?: number;
   viewState?: any;
 };
 
-export type GenericUIParamSettings = {
-  min: number;
-  max: number;
-  value: number;
-  step: number;
-};
 
-export type ParameterDef = {
-  paramId: any;
-  value: number;
-  [key: string]: any;
-};
+// export type ParameterDef = {
+//   paramId: any;
+//   value: number;
+//   [key: string]: any;
+// };
 
-export type Preset = {
-  index?: number;
-  name?: string;
-  color?: UINodeStyle;
-  parameters: HostParameterMap;
-  eventObject?: Object3D;
-  getParameterValues: () => Vec;
-};
+
 
 export type NodeLoadState = 'empty' | 'filled' 
 

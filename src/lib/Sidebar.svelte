@@ -2,29 +2,18 @@
   import Controls from "../controls/Controls.svelte";
   import ParameterLock from "./ParameterLock.svelte";
   import { ParamDefsHost, UI_Controls } from "../stores/stores";
-  import type { GenericUIParamSettings } from "../../types";
-  
+  import type {  UI_Slider } from "../../types";
 
-  let paramsForUI: { [key: string]: GenericUIParamSettings } =
-    $ParamDefsHost.reduce(
-      (
-        acc: { [key: string]: GenericUIParamSettings },
-        { paramId, min, max, defaultValue }
-      ) => {
-        acc[paramId] = { min, max, value: defaultValue, step: 0.001 };
-        return acc;
-      },
-      {}
-    );
+let slider: UI_Slider = { index:0, min: 0, max: 1, value: 0.5, step: 0.01 };
 
-    // add extra params that are ViewState related only, not for controlling audio params the host
-    paramsForUI = {
-      ...paramsForUI,
-      "smooth": { min: 0, max: 1, value: 0.5, step: 0.01 },
-    };
+  $ParamDefsHost.map(({ paramId, min, max, defaultValue }, index) => {
+    slider = { index, min, max, value: defaultValue, step: 0.01 };
+  $UI_Controls.set(paramId, slider);
+});
 
- UI_Controls.set( paramsForUI ) 
+ // add extra params that are ViewState related only, not for controlling audio params the host
+ $UI_Controls.set("smooth", { index: 5, min: 0, max: 1, value: 0.5, step: 0.01 });
 </script>
 
-<Controls {UI_Controls} />
+<Controls controlStore={UI_Controls} />
 <ParameterLock />
