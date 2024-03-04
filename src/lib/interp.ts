@@ -1,21 +1,22 @@
 import { HERMITE_V, VEC, ramp, clamp } from "@thi.ng/ramp";
-import type { UI_Preset } from "../../types/index.js";
+import type { UI_ControlsMap } from "../../types/index.js";
 import { CurrentVectorInterp } from "../stores/stores";
 import { get } from "svelte/store";
 import type { Vec } from "@thi.ng/vectors";
+import { extractValuesFrom } from "../utils/utils.js";
 
 export class Interpolation {
-  presets: { a: UI_Preset; b: UI_Preset };
+  presets: { a: UI_ControlsMap; b: UI_ControlsMap };
   run: boolean;
 
-  a: UI_Preset;
-  b: UI_Preset;
+  a: UI_ControlsMap;
+  b: UI_ControlsMap;
 
   private t: number;
-  private _inter: ReturnType<typeof ramp> | null = null;
+  private _inter: ReturnType<typeof ramp<Vec>> | null = null;
 
-  constructor(presets?: { a: UI_Preset; b: UI_Preset }, run: boolean = false) {
-    this.presets = presets || { a: {} as UI_Preset, b: {} as UI_Preset };
+  constructor(presets?: { a: UI_ControlsMap; b: UI_ControlsMap }, run: boolean = false) {
+    this.presets = presets || { a: {} as UI_ControlsMap, b: {} as UI_ControlsMap };
     this.run = run;
     this.a = this.presets.a;
     this.b = this.presets.b;
@@ -23,18 +24,19 @@ export class Interpolation {
     this._inter = null;
   }
 
-  inter(a: UI_Preset, b: UI_Preset) {
+  inter(a: UI_ControlsMap, b: UI_ControlsMap) {
     let startVec: Vec;
+
     if (get(CurrentVectorInterp)) {
       startVec = get(CurrentVectorInterp);
     } else {
-      startVec = a.getParameterValues();
+      startVec = extractValuesFrom(a);
     }
-    return ramp(
-      HERMITE_V(VEC(a.getParameterValues().length)),
+    return ramp<Vec>(
+      HERMITE_V(VEC(a.size)),
       [
         [0.0, startVec],
-        [100.0, b.getParameterValues()],
+        [100.0, extractValuesFrom(b)],
       ],
       { domain: clamp }
     );
@@ -54,15 +56,17 @@ export class Interpolation {
 
   canInterpolate() {
     return (
-      typeof this.a.getParameterValues === "function" &&
-      typeof this.b.getParameterValues === "function"
+       this.a.size > 0
+    &&   this.b.size > 0
     );
   }
 
   output() {
     if (this.canInterpolate()) {
       if (!this._inter) this._inter = this.inter(this.a, this.b);
-      return this._inter.at(this.t);
+      return this._inter?.at(this.t);
     }
+    return  get(CurrentVectorInterp);
   }
+
 }

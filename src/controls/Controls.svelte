@@ -42,7 +42,7 @@
     
  {#if $controlStore.size }
     {#each $controlStore as [paramId, control] }
-    {@const { value, min, max, step, index } = control }
+    {@const { step } = control }
     <label>
       {paramId}
       <input

@@ -24,7 +24,7 @@
     CurrentFocusId,
     FrameCount,
   } from "../stores/stores";
-  import type { HostParameter, UI_Preset } from "../../types";
+  import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { get } from "svelte/store";
 
   const dispatch = createRawEventDispatcher();
@@ -75,16 +75,13 @@
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
-    const controlsSnapshot:HostParameter = JSON.parse(JSON.stringify($UI_Controls)); // deep copy
+    const controlsSnapshot: UI_ControlsMap = $UI_Controls; // deep copy
     console.log( 'snapshot->', controlsSnapshot)
     const preset: UI_Preset = {
         eventObject: o.eventObject,
         index: nodeId,
         name: "Node_" + nodeId,
         parameters: controlsSnapshot,
-        getParameterValues: () => {
-          return Object.keys(controlsSnapshot).map((p) => controlsSnapshot[p].value);
-        },
     };
     dispatch("newSnapshot", preset);
   }

@@ -20,8 +20,7 @@
   import { get } from "svelte/store";
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
-  import {  wrapAsPreset } from "./utils/utils";
-  import type { UI_ControlsMap, UI_Preset } from "../types";
+  import type { UI_ControlsMap } from "../types";
 
   let interpolator: Interpolation;
 
@@ -38,7 +37,7 @@
   )
 
   function interpolatePreset(e: any) {
-    const controlsSnapshot = wrapAsPreset($UI_Controls);
+    const controlsSnapshot = $UI_Controls;
     const presetTuple = {
       a: controlsSnapshot,
       b: $UI_StoredPresets[$CurrentPickedId],
@@ -46,13 +45,12 @@
     interpolator = new Interpolation(presetTuple, true);
     $FrameCount = 0
     interpolator.reset(0)
-    controlsSnapshot.parameters
-    console.log("interpolater created");
   }
 
   function updateStateFSM(e:any) {
     const snapshot: UI_ControlsMap = $UI_Controls
-    $UI_StorageFSMs[$CurrentPickedId].storePreset(snapshot);
+    let onlyRegisteredParams = new Map([...snapshot].filter(([key, value]) => value.isRegistered));
+    $UI_StorageFSMs[$CurrentPickedId].storePreset(onlyRegisteredParams); // deep copy
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
     // had to manually get the current state key of each store

@@ -9,7 +9,7 @@
 let snapshot: UI_ControlsMap
 $: snapshot  = storedPreset;
 $: validPreset = storedPreset?.size > 0
-$:console.log( 'stored preset? ' , snapshot )
+
 
 </script>
 

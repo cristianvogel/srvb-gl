@@ -25,6 +25,7 @@ export type UI_Slider = {
   max: number | undefined;
   value: number | undefined;
   step: number | undefined;
+  isRegistered: boolean; // is the parameter registered with the host or does it exist in UI only
 };
 
 export interface UI_Preset {
@@ -33,8 +34,6 @@ export interface UI_Preset {
   color?: UINodeStyle;
   parameters: UI_ControlsMap;
   eventObject?: Object3D;
-  getParameterValues?: () => Vec;
-  setParameterValues?: (values: Vec) => void;
 };
 
 export type LocalManifest = {

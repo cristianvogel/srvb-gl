@@ -9,10 +9,7 @@
   import Chart from "./Minibar/Chart.svelte";
 
   let preset: UI_ControlsMap ;
-
   $: preset= $UI_StoredPresets[$CurrentFocusId];
- 
-
 </script>
 
 <div class="minibar">
