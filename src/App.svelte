@@ -21,6 +21,7 @@
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
   import {  wrapAsPreset } from "./utils/utils";
+  import type { UI_ControlsMap, UI_Preset } from "../types";
 
   let interpolator: Interpolation;
 
@@ -49,9 +50,9 @@
     console.log("interpolater created");
   }
 
-  function updateStateFSM(preset: any) {
-    const { index } = preset;
-    $UI_StorageFSMs[index].storePreset(preset);
+  function updateStateFSM(e:any) {
+    const snapshot: UI_ControlsMap = $UI_Controls
+    $UI_StorageFSMs[$CurrentPickedId].storePreset(snapshot);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
     // had to manually get the current state key of each store

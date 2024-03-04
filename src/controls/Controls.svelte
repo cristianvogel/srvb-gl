@@ -9,13 +9,10 @@
   export let controlStore: Writable<Map<string, UI_Slider>>;
   
   function updateControls(e: Event) {
-    console.log( 'ok' )
     let { value, dataset, step, min, max } =
-      e.target as HTMLInputElement;
-
+    e.target as HTMLInputElement;
     let key = dataset.key! as string;
 
- 
     if ($UpdateStateFSM !== "updatingUI") {
     // todo: locks
     //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
@@ -42,13 +39,12 @@
     <h3 class="heading">Controls</h3>
     
  {#if $controlStore.size }
-    {#each $controlStore as control, i}
-    {@const paramId = control[0] }
-    {@const { value, min, max, step, index } = control[1] }
+    {#each $controlStore as [paramId, control] }
+    {@const { value, min, max, step, index } = control }
     <label>
       {paramId}
       <input
-          id="sidebar_range"
+          id={`slider_${paramId}`}
           on:input={updateControls}
           on:wheel={updateControls}
           data-key={paramId}

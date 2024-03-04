@@ -13,12 +13,14 @@ export type HostParameter = {
   defaultValue?: number;
 };
 
+export type UI_ControlsMap = Map<string, UI_Slider>;
+
 export interface UI_ParameterController {
  [paramId: string]:  UI_Slider
 };
 
 export type UI_Slider = {
-  index: number | undefined;
+  index: number ;
   min: number | undefined;
   max: number | undefined;
   value: number | undefined;
@@ -26,10 +28,10 @@ export type UI_Slider = {
 };
 
 export interface UI_Preset {
-  index?: number;
+  index: number;
   name?: string;
   color?: UINodeStyle;
-  parameters: UI_ParameterController[];
+  parameters: UI_ControlsMap;
   eventObject?: Object3D;
   getParameterValues?: () => Vec;
   setParameterValues?: (values: Vec) => void;

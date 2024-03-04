@@ -1,24 +1,25 @@
 import type { Vec } from "@thi.ng/vectors";
 import type {
-  UI_ParameterController,
+  UI_ControlsMap,
   UI_Preset,
 } from "../../types";
+import { CurrentPickedId } from "../stores/stores";
+import { get } from "svelte/store";
 
-export function extractValuesFrom(settings: UI_ParameterController[]): Vec {
-  return Object.keys(settings).map((p: string) => settings[p].value);
+export function extractValuesFrom(view: UI_ControlsMap): Vec {
+  return Array.from(view.values()).map((slider) => slider.value) as Vec;
 }
 
-export function wrapAsPreset(settings: UI_ParameterController[]): UI_Preset {
+export function wrapAsPreset(settings: UI_ControlsMap): UI_Preset {
   const preset: UI_Preset = {
+    index: get(CurrentPickedId),
     parameters: settings,
-    getParameterValues: function() {
+    getParameterValues: function () {
       return extractValuesFrom(this.parameters);
     },
-    setParameterValues: function(values: Vec) {
-      this.parameters.forEach((controller: UI_ParameterController, i: number) => {
-        Object.keys(controller).forEach((paramId: string) => {
-          controller[paramId].value = values[i];
-        });
+    setParameterValues: function (params: Vec) {
+      settings.forEach((slider, key) => {
+        slider.value = params[slider.index];
       });
     },
   };

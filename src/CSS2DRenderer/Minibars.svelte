@@ -1,6 +1,6 @@
 <script lang="ts">
   import { get } from "svelte/store";
-  import type { UI_Preset } from "../../types";
+  import type { UI_ControlsMap, UI_Preset } from "../../types";
   import {
     CurrentFocusId,
     ShowMiniBars,
@@ -8,7 +8,7 @@
   } from "../stores/stores";
   import Chart from "./Minibar/Chart.svelte";
 
-  let preset: UI_Preset ;
+  let preset: UI_ControlsMap ;
 
   $: preset= $UI_StoredPresets[$CurrentFocusId];
  
@@ -17,7 +17,7 @@
 
 <div class="minibar">
 {#if $ShowMiniBars }
-    <Chart dataForChart={preset} />
+    <Chart storedPreset={preset} />
 {/if}
 </div>
 

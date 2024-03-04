@@ -19,6 +19,7 @@ import type {
   UI_Slider,
   HostParameter,
   UI_ParameterController,
+  UI_ControlsMap,
 } from "../../types";
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
@@ -139,12 +140,11 @@ export const UI_StorageFSMs: Writable<StorageFSM[]> = writable([]);
 // Seperate store for Class and Styles
 export const UI_ClassFSMs: Writable<ClassFSM[]> = writable([]);
 // Seperate store for Presets
-export const UI_StoredPresets: Writable<UI_Preset[]> = writable(
-  Array(NUMBER_NODES).fill({ index: -1, name: "-1", parameters: {} })
+export const UI_StoredPresets: Writable<UI_ControlsMap[]> = writable(
+  Array(NUMBER_NODES).fill(new Map())
 );
 // Sidebar controls
-//export const UI_Controls: Writable<UI_ParameterController[]> = writable();
-export const UI_Controls: Writable<Map<string, UI_Slider>> = writable(new Map());
+export const UI_Controls: Writable<UI_ControlsMap> = writable(new Map());
 
 // Global export of current RayCast target
 export const CurrentPickedId: Writable<number> = writable(0);
