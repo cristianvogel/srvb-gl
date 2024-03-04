@@ -5,14 +5,16 @@
   import * as v from "@thi.ng/vectors";
   import type { UI_Slider } from "../../types";
  
-  let entries:[];
+
   export let controlStore: Writable<Map<string, UI_Slider>>;
   
   function updateControls(e: Event) {
     let { value, dataset, step, min, max } =
     e.target as HTMLInputElement;
     let key = dataset.key! as string;
-
+    const slider:UI_Slider | undefined = $controlStore.get(key)
+    if (slider)  $controlStore.set(key, {...slider, value: Number(value) } )
+    $controlStore = $controlStore
     if ($UpdateStateFSM !== "updatingUI") {
     // todo: locks
     //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
@@ -48,14 +50,14 @@
           on:input={updateControls}
           on:wheel={updateControls}
           data-key={paramId}
-          value = {value}
-          min = {min}
-           max = {max}
+          value = {control.value}
+          min = {control.min}
+           max = {control.max}
           step = {step}
           type="range"
         />
         <div class="readout">
-          {Number(value).toFixed(2)}
+          {Number(control.value).toFixed(2)}
         </div>
         <div
           id="sidebar_range_lock"
