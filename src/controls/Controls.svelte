@@ -2,6 +2,7 @@
   import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
   import {
     ConsoleText,
+    LocksMap,
     NativeMessage,
     UI_Controls,
     UI_StorageFSMs,
@@ -57,6 +58,8 @@
   {#if $UI_Controls.size}
     {#each $UI_Controls as [paramId, slider]}
       {@const { step, min, max, value } = slider}
+      {@const lock = $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean" }
+      {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false }
       <label>
         {paramId}
         <input
@@ -68,6 +71,7 @@
           {min}
           {max}
           {step}
+          {disabled}
           type="range"
         />
         <div class="readout">
@@ -113,6 +117,10 @@
     align-items: center;
     justify-items: end;
     font-weight: 600;
+  }
+
+  .sidebar label :disabled {
+    opacity: 0.5;
   }
 
   .sidebar input[type="range"] {

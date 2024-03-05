@@ -14,7 +14,8 @@
     UI_Controls,
     FrameCount,
     CurrentVectorInterp,
-    ConsoleText
+    ConsoleText,
+    LocksMap,
   } from "./stores/stores";
   import { onlyRegisteredParams } from "./utils/utils";
   import { get } from "svelte/store";
@@ -25,41 +26,50 @@
   let interpolator: Interpolation;
   let controlsSnapshot: UI_ControlsMap;
 
+  // Threlte Watch Utilities
   watch(FrameCount, () => {
     interpolator?.update($FrameCount);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
   });
 
-
-  watch(CurrentVectorInterp, ()=> {
-    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp)
+  watch(CurrentVectorInterp, () => {
+    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp);
     controlsSnapshot = $UI_Controls;
-    const params: Map<string, UI_Slider> = onlyRegisteredParams(controlsSnapshot)
+    const sliders: Map<string, UI_Slider> =
+      onlyRegisteredParams(controlsSnapshot);
 
+  // Main interpolation routine 
     if (interpolator?.isRunning) {
-    params.forEach((param, key) => {
-      param.value = $CurrentVectorInterp[param.index]
-      $NativeMessage.requestParamValueUpdate( key, param.value)
-    })
-  }
-  })
   
+      sliders.forEach((param: UI_Slider, key: string) => {    // 🤔 not sure why this is 'backwards' key and value
+        const lock = typeof $LocksMap.get(key) === "boolean";
+        const disabled = lock ? Boolean($LocksMap.get(key)) : false;
+        param.value = $CurrentVectorInterp[param.index];
+        if (!disabled) $NativeMessage.requestParamValueUpdate(key, param.value);
+      });
+    }
+  });
+
+  // Call back for interpolating a preset
+  // hooked on UI event
   function interpolatePreset(e: any) {
     controlsSnapshot = $UI_Controls;
-    const params = onlyRegisteredParams(controlsSnapshot)
+    const params = onlyRegisteredParams(controlsSnapshot);
     const presetTuple = {
       a: params,
       b: $UI_StoredPresets[$CurrentPickedId],
     };
-    interpolator = new Interpolation(presetTuple, true);
-    $FrameCount = 0
-    interpolator.reset(0)
+    interpolator = new Interpolation(presetTuple);
+    $FrameCount = 0;
+    interpolator.reset(0);
   }
 
-  function updateStateFSM(e:any) {
-    controlsSnapshot = $UI_Controls
-    const params = onlyRegisteredParams(controlsSnapshot)
-    $UI_StorageFSMs[$CurrentPickedId].storePreset(params); 
+  // Call back storing 
+  // hooked on UI event
+  function updateStateFSM(e: any) {
+    controlsSnapshot = $UI_Controls;
+    const params = onlyRegisteredParams(controlsSnapshot);
+    $UI_StorageFSMs[$CurrentPickedId].storePreset(params);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
     // had to manually get the current state key of each store
@@ -69,10 +79,8 @@
     };
     $NativeMessage.setViewState(persisentState);
   }
-
-
-  
 </script>
+
 
 <InitialiseNodeStates />
 <Container>

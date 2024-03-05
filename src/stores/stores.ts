@@ -97,7 +97,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
 
 //-----------------  UI defs and parameters -------------------
 
-const NUMBER_NODES = 36;
+const NUMBER_NODES = 8 * 8;
 export const manifest: LocalManifest = {
   NUMBER_NODES,
   NUMBER_PARAMS: 4,
@@ -127,9 +127,7 @@ export const ParamIds: Writable<string[]> = writable(
 );
 
 //--- parameter and presets stores -------------------
-export interface LocksStoreEntry {
-  [key: string]: number;
-}
+
 
 export interface UINodeStyle {
   base: string | THREE.Color;
@@ -185,10 +183,10 @@ export const getNodeStateAs = {
   },
 };
 
-// ⤵︎ Factory object for simple toggle to lock a parameter in the UI
+// simple toggle to lock a parameter in the UI
 export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
-
 const icon: any = get(LockIcon);
+// ⤵︎ Factory FSM object 
 export const createLockFSM = function (): FSM {
   //@ts-ignore
   return fsm(icon.OPEN, {
@@ -204,6 +202,8 @@ export const createLockFSM = function (): FSM {
     },
   });
 };
+
+export const LocksMap: Writable< Map<Element | string, FSM | boolean> > = writable(new Map());
 
 // ⤵︎ Machine for handling UI to Host communication
 
@@ -344,11 +344,3 @@ export const ErrorStore: Writable<any> = writable();
 //---- other stuff -------------------
 export const PixelDensity: Writable<number> = writable(2);
 
-// todo;;;; look at this?
-// specify an empty object with valid param keys for the locks store
-// otherwise the UI will break
-const emptyLocksObject: LocksStoreEntry = {};
-for (const paramId of get(ParamIds)) {
-  emptyLocksObject[paramId] = 0;
-}
-export const LocksStore: Writable<{}> = writable(emptyLocksObject);

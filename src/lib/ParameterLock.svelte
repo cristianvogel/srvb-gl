@@ -1,11 +1,21 @@
 <script lang="ts">
+
+/**
+ * Parameter Locks
+ * Coder entertaining themselves, unnecessarily tricky.
+ * The actual HTML Element (the lock button div) is 
+ * stored as Key in Map, and its related state machine as value. Because Maps allow for polymorphic keys.
+ * Also a simple boolean representation is pushed to the Map, with more conventional 'string' as key 
+ * and bool as value, after interactions have happened.
+ * Pretty cool yet over complicated use of polymorphic keys. 
+ **/
+
+
   import { onMount } from "svelte";
-  import { LockIcon, createLockFSM, LocksStore } from "../stores/stores";
+  import { LockIcon, createLockFSM, LocksMap } from "../stores/stores";
   import type { FSM } from "../stores/stores";
-  import { get } from "svelte/store";
 
   let lockButtons: Element[] = [];
-  let paramLocksAsMap: Map<Element, FSM> = new Map();
   let lockFSM: FSM;
   onMount(() => {
     getLockButtons();
@@ -17,31 +27,29 @@
   }
 
   function setupLockButtonsOnSidebar() {
-    lockButtons.map((lockElement) => {
+    lockButtons.map((lockElement, i) => {
       lockElement.addEventListener("pointerdown", lockParam);
       (lockElement as HTMLElement).style.cursor = "pointer";
       lockElement.textContent = $LockIcon.OPEN;
-      paramLocksAsMap.set(lockElement, createLockFSM());
+      $LocksMap.set(lockElement, createLockFSM());
     });
   }
 
   function lockParam(event: any) {
     //console.log(event.target as Element);
     const name = event.target.dataset.key.split("_")[1];
-    const iconDiv = event.target;
+    const button = event.target;
 
     // toggle the FSM linked to the Label/Button (see Map definition)
-    if (name && iconDiv) {
-      const lock = event.target as Element;
-      lockFSM = paramLocksAsMap.get(lock as Element) as FSM;
-      iconDiv.textContent = lockFSM.toggle();
-    }
-    // 2. Derive a labelled version of the same as a plain Object
-    // which is also existing a Svelte writable
-    const parsedLock: { [k: string]: 0 | 1 } = {
-      [name]: iconDiv.textContent === $LockIcon.OPEN ? 0 : 1,
-    };
-    const prevLocksStore = get(LocksStore);
-    LocksStore.set({ ...prevLocksStore, ...parsedLock });
+    // and add a simple bool rep keyed with paramID to the LocksMap in the store
+
+      const lock = event.target as HTMLInputElement;
+      const linkedParam =  (lock.dataset.key?.split('_')[1]) as string; // need to format a bit, comes in via the data-key prop on the HTML Element
+      lockFSM = $LocksMap.get(lock) as FSM;
+      //@ts-ignore
+      button.textContent = lockFSM.toggle();
+      $LocksMap.set( linkedParam, $lockFSM === $LockIcon.LOCKED  )
+      $LocksMap = $LocksMap
   }
+
 </script>

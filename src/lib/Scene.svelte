@@ -1,7 +1,13 @@
 <script lang="ts">
   import RayCastPointer from "./RayCastPointer.svelte";
 
-  import { T, createRawEventDispatcher, useTask, useThrelte, watch } from "@threlte/core";
+  import {
+    T,
+    createRawEventDispatcher,
+    useTask,
+    useThrelte,
+    watch,
+  } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
   import { Color as THREE_Color } from "three";
@@ -26,15 +32,32 @@
   } from "../stores/stores";
   import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { get } from "svelte/store";
- 
+
+  const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
+  const palette = cosineGradient(32, gradient).map(css);
+  const colorRotate = 12;
+  const elementsPerSide = 8;
+  const radius = 0.25 || 0.1618;
+  const layers = [1]; // layers of nodes
+  const bigInstancedMeshPosition: [x: number, y: number, z: number] = [
+    -2, -0.5, -1.5,
+  ];
 
   const dispatch = createRawEventDispatcher();
-
   const { scene } = useThrelte();
 
-  useTask( 'deltaCount', (delta) => deltaCount(delta))
+  // Framerate dependent counter, made independent from framerate using delta division
+  useTask("deltaCount", (delta) => deltaCount(delta));
 
-  // UI draw update
+  // super cool Threlte framecount independent counting timer
+  function deltaCount(delta: number) {
+    let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
+    rate = rate ** 1.6 * 0.1;
+    $FrameCount = $FrameCount + delta / rate;
+  }
+
+  // UI draw update when storage state machines update
+  // goes through every mesh in the instanced mesh object
   watch(UI_StorageFSMs, (storage) => {
     let gridComponents = scene.children.filter(
       (component) => component.name === "grid"
@@ -44,54 +67,38 @@
       cubes.forEach((cube, i) => {
         if (get(storage[i]) === "filled") {
           $UI_ClassFSMs[i].fill(cube);
-        } 
+        }
       });
     });
   });
 
-  const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
-  const palette = cosineGradient(28, gradient).map(css);
-  const colorRotate = 12;
-  const elementsPerSide = 6;
-  const radius = 0.275 || 0.1618;
-  const layers = [1]; // layers of nodes
-  const bigInstancedMeshPosition: [x:number, y:number, z:number] = [-1.5, -1, -1];
 
-  function assignNodeColorStates(
-    nodeIndex: number,
-    colorPick: string
-  ): void {
+
+  function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
     // console.log("REF?", o.ref, nodeIndex);
     const base = new THREE_Color(colorPick);
     const highlighted = new THREE_Color("red");
     $UI_ClassFSMs[nodeIndex].assign({ base, highlighted });
   }
 
-  function deltaCount (delta: number)  { 
-    let rate = Math.max( 1.0e-3, $UI_Controls.get('smooth')?.value || 0)
-    rate = rate ** 3
-    $FrameCount = ($FrameCount + (delta / rate )); 
-  }
-
-/* Interactivity
+  /* Interactivity
 //////////////// 
 */
-// store a preset
+  // store a preset
   function nodeRightClick(o: any) {
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
     const controlsSnapshot: UI_ControlsMap = $UI_Controls; // deep copy
-    console.log( 'snapshot->', controlsSnapshot)
+    console.log("snapshot->", controlsSnapshot);
     const preset: UI_Preset = {
-        eventObject: o.eventObject,
-        index: nodeId,
-        name: "Node_" + nodeId,
-        parameters: controlsSnapshot,
+      eventObject: o.eventObject,
+      index: nodeId,
+      name: "Node_" + nodeId,
+      parameters: controlsSnapshot,
     };
     dispatch("newSnapshot", preset);
   }
-
 
   // interpolate preset
   function nodeClick(o: any) {
@@ -101,12 +108,12 @@
 
   function nodeEnter(o: any) {
     $ShowMiniBars = true;
-    $CurrentFocusId = o.instanceId
+    $CurrentFocusId = o.instanceId;
   }
 
   function nodePointer(o: any) {
     $ShowMiniBars = true;
-    $CurrentFocusId = o.instanceId
+    $CurrentFocusId = o.instanceId;
   }
 
   function nodeLeave(o: any) {
@@ -114,23 +121,22 @@
   }
 
   interactivity();
-
 </script>
 
 <div id="updater" />
 <T.PerspectiveCamera
   makeDefault
-  args={[40, 1, 0.1, 100]}
-  position={[elementsPerSide, elementsPerSide, elementsPerSide]}
+  args={[20, 1, 0.1, 100]}
+  position={[elementsPerSide+2, elementsPerSide+2, elementsPerSide-2]}
 >
   <OrbitControls
     enableDamping
     enableZoom
-    maxDistance="5"
+    maxDistance="8"
     minDistance="4"
     minAzimuthAngle="-1"
     maxAzimuthAngle="1"
-    enablePan="false"
+    enablePan="true"
     zoomSpeed="0.1"
     panSpeed="0.05"
   />
@@ -140,7 +146,7 @@
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
   <T.MeshStandardMaterial />
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
-    {@const offsetter = arrayIterator(fillRange([], 0, -3, 1, 1 / 6))};
+    {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 12))};
     {#each layers as y}
       {#each Array.from({ length: elementsPerSide }, (_, i) => i) as z}
         {@const nodeIndex = y * z + x * elementsPerSide}
@@ -178,15 +184,12 @@
           on:pointermove={nodePointer}
           color={palette[colorPick]}
           position={[pos.x, pos.y, pos.z]}
-          
         />
       {/each}
     {/each}
   {/each}
   <PortalTarget id="nodes" />
 </InstancedMesh>
-
-
 
 <T.DirectionalLight position={[0, 8, 0]} />
 <T.AmbientLight intensity={0.7} />
