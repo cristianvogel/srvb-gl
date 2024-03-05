@@ -16,30 +16,39 @@
     CurrentVectorInterp,
     ConsoleText
   } from "./stores/stores";
-
+  import { onlyRegisteredParams } from "./utils/utils";
   import { get } from "svelte/store";
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
-  import type { UI_ControlsMap } from "../types";
+  import type { UI_ControlsMap, UI_Slider } from "../types";
 
   let interpolator: Interpolation;
+  let controlsSnapshot: UI_ControlsMap;
 
   watch(FrameCount, () => {
     interpolator?.update($FrameCount);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
   });
 
+
   watch(CurrentVectorInterp, ()=> {
     if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp)
-  
-  //  $NativeMessage.requestParamValueUpdate()
-  }
-  )
+    controlsSnapshot = $UI_Controls;
+    const params: Map<string, UI_Slider> = onlyRegisteredParams(controlsSnapshot)
 
+    if (interpolator?.isRunning) {
+    params.forEach((param, key) => {
+      param.value = $CurrentVectorInterp[param.index]
+      $NativeMessage.requestParamValueUpdate( key, param.value)
+    })
+  }
+  })
+  
   function interpolatePreset(e: any) {
-    const controlsSnapshot = $UI_Controls;
+    controlsSnapshot = $UI_Controls;
+    const params = onlyRegisteredParams(controlsSnapshot)
     const presetTuple = {
-      a: controlsSnapshot,
+      a: params,
       b: $UI_StoredPresets[$CurrentPickedId],
     };
     interpolator = new Interpolation(presetTuple, true);
@@ -48,9 +57,9 @@
   }
 
   function updateStateFSM(e:any) {
-    const snapshot: UI_ControlsMap = $UI_Controls
-    let onlyRegisteredParams = new Map([...snapshot].filter(([key, value]) => value.isRegistered));
-    $UI_StorageFSMs[$CurrentPickedId].storePreset(onlyRegisteredParams); // deep copy
+    controlsSnapshot = $UI_Controls
+    const params = onlyRegisteredParams(controlsSnapshot)
+    $UI_StorageFSMs[$CurrentPickedId].storePreset(params); 
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
     // had to manually get the current state key of each store

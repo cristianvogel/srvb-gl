@@ -26,14 +26,15 @@
   } from "../stores/stores";
   import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { get } from "svelte/store";
+ 
 
   const dispatch = createRawEventDispatcher();
 
   const { scene } = useThrelte();
 
-  useTask( 'frameCOUNT',  (delta) => { $FrameCount++%10000; } )
+  useTask( 'deltaCount', (delta) => deltaCount(delta))
 
-
+  // UI draw update
   watch(UI_StorageFSMs, (storage) => {
     let gridComponents = scene.children.filter(
       (component) => component.name === "grid"
@@ -52,9 +53,9 @@
   const palette = cosineGradient(28, gradient).map(css);
   const colorRotate = 12;
   const elementsPerSide = 6;
-  const radius = 0.3 || 0.1618;
+  const radius = 0.275 || 0.1618;
   const layers = [1]; // layers of nodes
-  const bigInstancedMeshPosition = [-1.5, -1, -1];
+  const bigInstancedMeshPosition: [x:number, y:number, z:number] = [-1.5, -1, -1];
 
   function assignNodeColorStates(
     nodeIndex: number,
@@ -66,6 +67,11 @@
     $UI_ClassFSMs[nodeIndex].assign({ base, highlighted });
   }
 
+  function deltaCount (delta: number)  { 
+    let rate = Math.max( 1.0e-3, $UI_Controls.get('smooth')?.value || 0)
+    rate = rate ** 3
+    $FrameCount = ($FrameCount + (delta / rate )); 
+  }
 
 /* Interactivity
 //////////////// 
@@ -134,7 +140,7 @@
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
   <T.MeshStandardMaterial />
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
-    {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 6))};
+    {@const offsetter = arrayIterator(fillRange([], 0, -3, 1, 1 / 6))};
     {#each layers as y}
       {#each Array.from({ length: elementsPerSide }, (_, i) => i) as z}
         {@const nodeIndex = y * z + x * elementsPerSide}

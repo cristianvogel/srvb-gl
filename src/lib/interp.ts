@@ -7,7 +7,6 @@ import { extractValuesFrom } from "../utils/utils.js";
 
 export class Interpolation {
   presets: { a: UI_ControlsMap; b: UI_ControlsMap };
-  run: boolean;
 
   a: UI_ControlsMap;
   b: UI_ControlsMap;
@@ -15,9 +14,14 @@ export class Interpolation {
   private t: number;
   private _inter: ReturnType<typeof ramp<Vec>> | null = null;
 
-  constructor(presets?: { a: UI_ControlsMap; b: UI_ControlsMap }, run: boolean = false) {
-    this.presets = presets || { a: {} as UI_ControlsMap, b: {} as UI_ControlsMap };
-    this.run = run;
+  public isRunning: boolean;
+
+  constructor(presets?: { a: UI_ControlsMap; b: UI_ControlsMap }) {
+    this.presets = presets || {
+      a: {} as UI_ControlsMap,
+      b: {} as UI_ControlsMap,
+    };
+    this.isRunning = false;
     this.a = this.presets.a;
     this.b = this.presets.b;
     this.t = 0;
@@ -41,13 +45,14 @@ export class Interpolation {
       { domain: clamp }
     );
   }
-  
+
   update(t: number) {
     this.t = t;
   }
 
   reset(to: number = 0) {
     this.t = to;
+    this.isRunning = true;
   }
 
   stopInterp() {
@@ -55,18 +60,21 @@ export class Interpolation {
   }
 
   canInterpolate() {
-    return (
-       this.a.size > 0
-    &&   this.b.size > 0
-    );
+    return this.a.size > 0 && this.b.size > 0;
   }
 
   output() {
+    // trash interpolator if t is greater than 100
+    if (this.t > 100) {
+      this._inter = null;
+      this.isRunning = false;
+    }
+
     if (this.canInterpolate()) {
       if (!this._inter) this._inter = this.inter(this.a, this.b);
       return this._inter?.at(this.t);
     }
-    return  get(CurrentVectorInterp);
-  }
 
+    return get(CurrentVectorInterp);
+  }
 }

@@ -14,11 +14,8 @@ import type {
   LocalManifest,
   NativeMessages,
   NodeLoadState,
-  UI_Preset,
   StorageFSM,
-  UI_Slider,
   HostParameter,
-  UI_ParameterController,
   UI_ControlsMap,
 } from "../../types";
 import type { Vector2Tuple } from "three";
@@ -37,10 +34,11 @@ export const FrameCount: Writable<number> = writable(0);
 
 export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
 
-
 // ---- native interops -------------------
 
 export const NativeMessage: Writable<NativeMessages> = writable({
+  //// Sending messages to the host
+
   // store any persistent UI state in the host
   // serialisation happens here
   setViewState: function (viewState: any) {
@@ -67,23 +65,32 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       });
     }
   },
-  // register messages sent from the host
-  registerMessagesFromHost: function () {
-    globalThis.__receiveStateChange__ = function (state: any) {
-      // trigger FSM transition
-      UpdateStateFSM.updateFrom("host");
-      // then deserialize and store the received state
-      HostState.set(JSON.parse(state)); // deserialization esssential
-    };
-    globalThis.__receiveError__ = function (error: any) {
-      // do something more useful here?
-      ErrorStore.set(error);
-    };
-  },
   // send a ready message to the host
   requestReady: function () {
     if (typeof globalThis.__postNativeMessage__ === "function") {
       globalThis.__postNativeMessage__("ready", {});
+    }
+  },
+  //// Receiving messages from the host
+  // register messages sent from the host
+  registerMessagesFromHost: function () {
+    if ( get(UpdateStateFSM) !== "updatingHost"
+    ) {
+      globalThis.__receiveStateChange__ = function (state: any) {
+        // trigger FSM transition
+        UpdateStateFSM.updateFrom("host");
+        // then deserialize and store the received state as a Map
+        // Transpose incoming state which has the form of  <k,v>
+        const entries: any = Object.entries(JSON.parse(state));
+        // into a TS Map and store in HostState
+        HostState.set(new Map(entries));
+      };
+
+      // error handling
+      globalThis.__receiveError__ = function (error: any) {
+        // do something more useful here?
+        ErrorStore.set(error);
+      };
     }
   },
 });
@@ -110,7 +117,6 @@ export const manifest: LocalManifest = {
   viewState: new Array(NUMBER_NODES).fill(0),
 };
 
-export const CurrentControlSettings: Writable<UI_Slider[]> = writable([]);
 //---- registered audio parameters -------------------
 export const ParamDefsHost: Writable<HostParameter[]> = writable(
   manifest.parameters
@@ -210,7 +216,7 @@ export const UpdateStateFSM = fsm("ready", {
   },
   updatingHost: {
     _enter() {
-      (this.set as unknown as Debounced).debounce(2);
+      (this.set as unknown as Debounced).debounce(1);
     },
     set: "ready",
   },
@@ -226,7 +232,7 @@ export function createNodeClassFSM(colors: any, index: number) {
   return fsm("empty", {
     empty: {
       assign(c) {
-        console.log( "assigning colors " )
+        console.log("assigning colors ");
         colors = c;
       },
       paint(eventObject) {
@@ -246,7 +252,6 @@ export function createNodeClassFSM(colors: any, index: number) {
         eventObject.color.set(colors.highlighted);
         return "filled";
       },
-    
     },
   });
 }
@@ -259,8 +264,8 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
       storePreset(p) {
-        console.log( 'store preset data', p )
-        get(UI_StoredPresets)[index] = p;
+        console.log("store preset data", p);
+        get(UI_StoredPresets)[index] = new Map(p);
         return "filled";
       },
 
@@ -274,9 +279,9 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       },
       getPreset(i) {
         return get(UI_StoredPresets)[i];
-      }, 
+      },
       storePreset(p) {
-        get(UI_StoredPresets)[index] = p;
+        get(UI_StoredPresets)[index] = new Map(p);
         return "filled";
       },
       resetTo(state) {
@@ -333,7 +338,7 @@ export const ConsoleFSM = fsm("start", {
 // ---- state synchronisation -------------------
 
 // custom store that holds received host state
-export const HostState: Writable<any> = writable();
+export const HostState: Writable<Map<string, any>> = writable();
 export const ErrorStore: Writable<any> = writable();
 
 //---- other stuff -------------------

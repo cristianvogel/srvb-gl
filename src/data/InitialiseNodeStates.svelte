@@ -28,9 +28,10 @@
   storageFSMsInit();
   classFSMsInit();
 
+  // this might need fixing now that $HostState is a Map<string,any>
   $: {
-    if ($HostState?.viewState && !restoredState) {
-      const parsedViewState = JSON.parse($HostState.viewState); // needs to be parsed again here
+    if ($HostState?.get("viewState") && !restoredState) {
+      const parsedViewState = JSON.parse($HostState.get("viewState")); // needs to be parsed again here
       console.log("Got stored state parsed to ", parsedViewState);
       storageFSMsInit(parsedViewState.nodes);
       $UI_StoredPresets = parsedViewState.presets;
@@ -38,9 +39,8 @@
     }
   }
 
-  // we are going to make an array of Finite State Machines to
+  // Make an array of Finite State Machines to
   // hold the storage of each Node in the UI
-
   function storageFSMsInit(startingStates?: NodeLoadState[]) {
     for (let i = 0; i < manifest.NUMBER_NODES; i++) {
       const s = startingStates ? startingStates[i] || "empty" : "empty";

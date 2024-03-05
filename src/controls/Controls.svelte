@@ -1,63 +1,77 @@
 <script lang="ts">
-  import type { Writable } from "svelte/store";
   import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
-  import { ConsoleText, NativeMessage, UI_StorageFSMs, UpdateStateFSM } from "../stores/stores";
-  import * as v from "@thi.ng/vectors";
-  import type { UI_Slider } from "../../types";
- 
+  import {
+    ConsoleText,
+    NativeMessage,
+    UI_Controls,
+    UI_StorageFSMs,
+  } from "../stores/stores";
+  import { Smush32 } from "@thi.ng/random";
+  import type { UI_ControlsMap, UI_Slider } from "../../types";
 
-  export let controlStore: Writable<Map<string, UI_Slider>>;
-  
   function updateControls(e: Event) {
-    let { value, dataset, step, min, max } =
-    e.target as HTMLInputElement;
+    let { value, dataset } = e.target as HTMLInputElement;
     let key = dataset.key! as string;
-    const slider:UI_Slider | undefined = $controlStore.get(key)
-    if (slider)  $controlStore.set(key, {...slider, value: Number(value) } )
-    $controlStore = $controlStore
-    if ($UpdateStateFSM !== "updatingUI") {
-    // todo: locks
-    //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
-    $NativeMessage.requestParamValueUpdate(key, $controlStore.get(key)?.value as number);
-    }
+    const sliderSettings: UI_Slider | undefined = $UI_Controls.get(key);
+    if (sliderSettings) $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
+    $UI_Controls = $UI_Controls;
+      // todo: locks
+      //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
+      $NativeMessage.requestParamValueUpdate(
+        key,
+        $UI_Controls.get(key)?.value as number
+      );
   }
-      
 
   function randomisePresets() {
-    const randomVector =  ()=> v.randDistrib4([]);
-     $UI_StorageFSMs.forEach( (fsm) => {
-      fsm.storePreset( v.abs4([],randomVector()) );
+    const smush = new Smush32(0x909808303);
+    const randomPreset = new Map($UI_Controls);
+
+    $UI_StorageFSMs.forEach((fsm) => {
+      fsm.storePreset(generateRandomPreset());
       fsm.randomise();
-     })
-     $UI_StorageFSMs = $UI_StorageFSMs
+    });
+
+    function generateRandomPreset(): UI_ControlsMap {
+      randomPreset.forEach((settings, key) => {
+        let rnd = smush.minmax(0, 1);
+        randomPreset.set(key, {
+          ...settings,
+          value: rnd,
+        });
+      });
+      return randomPreset;
     }
+
+    $UI_StorageFSMs = $UI_StorageFSMs;
+  }
 </script>
 
 <ParameterSynchronisation />
 
-  <div class="sidebar">
-    <pre>{$ConsoleText}</pre>
-    <button class='button' on:click={ randomisePresets }>Randomise</button>
-    <h3 class="heading">Controls</h3>
-    
- {#if $controlStore.size }
-    {#each $controlStore as [paramId, control] }
-    {@const { step } = control }
-    <label>
-      {paramId}
-      <input
+<div class="sidebar">
+  <pre>{$ConsoleText}</pre>
+  <button class="button" on:click={randomisePresets}>Randomise</button>
+  <h3 class="heading">Controls</h3>
+
+  {#if $UI_Controls.size}
+    {#each $UI_Controls as [paramId, slider]}
+      {@const { step, min, max, value } = slider}
+      <label>
+        {paramId}
+        <input
           id={`slider_${paramId}`}
           on:input={updateControls}
           on:wheel={updateControls}
           data-key={paramId}
-          value = {control.value}
-          min = {control.min}
-           max = {control.max}
-          step = {step}
+          {value}
+          {min}
+          {max}
+          {step}
           type="range"
         />
         <div class="readout">
-          {Number(control.value).toFixed(2)}
+          {Number(slider.value).toFixed(2)}
         </div>
         <div
           id="sidebar_range_lock"
@@ -66,17 +80,15 @@
         ></div>
       </label>
     {/each}
-    {/if}
-  </div>
-
+  {/if}
+</div>
 
 <style>
-
   pre {
     font-size: 0.75rem;
     color: chartreuse;
   }
-  
+
   .sidebar {
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));
