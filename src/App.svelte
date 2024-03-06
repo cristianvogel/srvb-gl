@@ -4,7 +4,6 @@
   import CssScene from "./CSS2DRenderer/CssScene.svelte";
   import Sidebar from "./lib/Sidebar.svelte";
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
-  import Container from "./lib/Container.svelte";
   import {
     CurrentPickedId,
     NativeMessage,
@@ -84,25 +83,27 @@
 </script>
 
 <InitialiseNodeStates />
+
 <PresetSmush bind:smush />
-<Container>
+
   <div id="css-renderer-target" />
-  <div class="w-full" id="main">
-    <Canvas autoRender={true}>
+
+    <Canvas autoRender={true} size = { { width: 575, height: 575 * 1.618 } }>
+
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}
       />
+
       <CssScene />
+
     </Canvas>
+
     <Sidebar on:smush = {smush} />
-  </div>
-</Container>
+
 
 <style>
-  div#main {
-    height: 100%;
-  }
+
   #css-renderer-target {
     left: 0;
     position: absolute;

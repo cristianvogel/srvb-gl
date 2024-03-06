@@ -101,8 +101,8 @@ export const manifest: LocalManifest = {
   NUMBER_NODES,
   NUMBER_PARAMS: 4,
   window: {
-    width: 800,
-    height: 444,
+    width: 575,
+    height: 930,
   },
   // ---- Parameters  -------------------
   // The order of Entries in the parameters object her

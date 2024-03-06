@@ -91,7 +91,7 @@ EffectsPluginProcessor::~EffectsPluginProcessor()
 //==============================================================================
 juce::AudioProcessorEditor* EffectsPluginProcessor::createEditor()
 {
-    auto * editor = new WebViewEditor(this, getAssetsDirectory(), 800, 704);
+    auto * editor = new WebViewEditor(this, getAssetsDirectory(), 575, 930);
     editor->viewStateChanged = [this](choc::value::Value& v) {
         DBG("View State Changed " + v.toString());
         state.insert_or_assign("viewState", v.toString());

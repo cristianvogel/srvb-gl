@@ -24,7 +24,7 @@
     interactivity,
     RoundedBoxGeometry,
     Text,
-    PortalTarget
+    PortalTarget,
   } from "@threlte/extras";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import {
@@ -39,6 +39,7 @@
   import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
+  import { degToRad } from "three/src/math/MathUtils.js";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));
@@ -49,6 +50,7 @@
   const startingMeshPosition: Vector3 = new Vector3(-0.5, 1, -0.25);
 
   let positionMeshIndex = 0;
+
   const dispatch = createRawEventDispatcher();
   const { scene } = useThrelte();
 
@@ -119,6 +121,7 @@
   function nodeClick(o: any) {
     $CurrentPickedId = o.instanceId;
     dispatch("interpolatePreset", true);
+    console.log(o);
   }
 
   function nodeEnter(o: any) {
@@ -140,8 +143,8 @@
 
 <T.PerspectiveCamera
   makeDefault
-  position={[elementsPerSide - 2, elementsPerSide, elementsPerSide]}
-  zoom={2.5}
+  position={[elementsPerSide - 2, elementsPerSide+4, elementsPerSide]}
+  zoom={5.5}
 >
   <OrbitControls
     mouseButtons={{ LEFT: 0, RIGHT: MOUSE.ROTATE }}
@@ -149,7 +152,7 @@
     enableZoom={true}
     zoomToCursor={true}
     zoomSpeed={0.1}
-    maxDistance={8}
+    maxDistance={20}
     minDistance={4}
     minAzimuthAngle={-1}
     maxAzimuthAngle={1}
@@ -160,9 +163,15 @@
 </T.PerspectiveCamera>
 <RayCastPointer />
 
-<InstancedMesh position={startingMeshPosition.toArray()} name="grid">
-  <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
+<InstancedMesh 
+position={startingMeshPosition.toArray()} 
+name="grid"
+rotation={[0, degToRad(-9), 0]}
+>
+  <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} radius={0.01} />
+
   <T.MeshStandardMaterial />
+
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
     {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 12))};
     {#each layers as y}

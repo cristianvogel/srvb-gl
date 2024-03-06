@@ -19,8 +19,8 @@
     <T.Mesh
       on:pointermove={onPointerMove}
       visible={false}
-      position={ [1,1,0.5]}
-      scale={[4,1]} 
+      position={ [1.25,0.99,1.25]}
+      scale={[4.5, 2,1]} 
     >
       <T.BoxGeometry args= {[1, 0.1, 4]} />
     </T.Mesh>

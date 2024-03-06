@@ -27,11 +27,11 @@ std::string getMimeType(std::string const &ext)
 }
 
 //==============================================================================
-WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &assetDirectory, int /*width*/, int /*height*/)
+WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &assetDirectory, int width, int /*height*/)
     : juce::AudioProcessorEditor(proc)
 {
-    setSize(800, 494);
-    setResizable(true, true);
+    setSize(width, width*1.618);
+    setResizable(false, true);
 
     choc::ui::WebView::Options opts;
 
@@ -66,7 +66,7 @@ WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &asset
 #endif
 
     addAndMakeVisible(viewContainer);
-    viewContainer.setBounds({0, 0, 800, 494});
+    viewContainer.setBounds({0, 0, width,  static_cast<int>( width * 1.618 )});
 
     // Install message passing handlers
     webView->bind("__postNativeMessage__", [=](const choc::value::ValueView &args) -> choc::value::Value
