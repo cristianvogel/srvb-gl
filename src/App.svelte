@@ -12,7 +12,7 @@
     UI_StorageFSMs,
     UI_StoredPresets,
     UI_Controls,
-    FrameCount,
+    Accumulator,
     CurrentVectorInterp,
     ConsoleText,
     LocksMap,
@@ -27,8 +27,8 @@
   let controlsSnapshot: UI_ControlsMap;
 
   // Threlte Watch Utilities
-  watch(FrameCount, () => {
-    interpolator?.update($FrameCount);
+  watch(Accumulator, () => {
+    interpolator?.update($Accumulator);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
   });
 
@@ -40,7 +40,6 @@
 
   // Main interpolation routine 
     if (interpolator?.isRunning) {
-  
       sliders.forEach((param: UI_Slider, key: string) => {    // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";
         const disabled = lock ? Boolean($LocksMap.get(key)) : false;
@@ -60,11 +59,11 @@
       b: $UI_StoredPresets[$CurrentPickedId],
     };
     interpolator = new Interpolation(presetTuple);
-    $FrameCount = 0;
+    $Accumulator = 0;
     interpolator.reset(0);
   }
 
-  // Call back storing 
+  // Call back for storing 
   // hooked on UI event
   function updateStateFSM(e: any) {
     controlsSnapshot = $UI_Controls;
@@ -86,7 +85,7 @@
 <Container>
   <div id="css-renderer-target" />
   <div class="w-full" id="main">
-    <Canvas autoRender={true}>
+    <Canvas autoRender={true} >
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}

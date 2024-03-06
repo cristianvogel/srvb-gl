@@ -11,6 +11,7 @@
   } from "../stores/stores";
   import type {  NodeLoadState  } from "../../types";
   import { get } from "svelte/store";
+  import { updateClassStates } from "../utils/utils";
 
 
   // first, ping the host,
@@ -61,13 +62,6 @@
       );
     }
 
-    // EXPLICITLY set the UI_ClassFSMs to the correct state
-    for (let i = 0; i < manifest.NUMBER_NODES; i++) {
-      if (get($UI_StorageFSMs[i]) === "empty") {
-        $UI_ClassFSMs[i].empty();
-      } else {
-        $UI_ClassFSMs[i].filled();
-      }
-    }
+    updateClassStates()
   }
 </script>

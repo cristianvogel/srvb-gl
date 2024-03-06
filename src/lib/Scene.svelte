@@ -9,8 +9,14 @@
     watch,
   } from "@threlte/core";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
-  import { cosineGradient, COSINE_GRADIENTS, css } from "@thi.ng/color";
-  import { Color as THREE_Color } from "three";
+  import {
+    cosineGradient,
+    COSINE_GRADIENTS,
+    css,
+    rgb,
+    srgb,
+  } from "@thi.ng/color";
+  import { Group, MOUSE, Object3D, Color as THREE_Color, Vector3 } from "three";
   import {
     Instance,
     InstancedMesh,
@@ -19,6 +25,7 @@
     RoundedBoxGeometry,
     Text,
     PortalTarget,
+    TransformControls,
   } from "@threlte/extras";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import {
@@ -28,23 +35,28 @@
     UI_Controls,
     UI_StorageFSMs,
     CurrentFocusId,
-    FrameCount,
+    Accumulator,
   } from "../stores/stores";
   import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { get } from "svelte/store";
+  import { onMount } from "svelte";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
-  const palette = cosineGradient(32, gradient).map(css);
+  const palette = cosineGradient(32, gradient).map((c) => css(c));
   const colorRotate = 12;
   const elementsPerSide = 8;
   const radius = 0.25 || 0.1618;
   const layers = [1]; // layers of nodes
-  const bigInstancedMeshPosition: [x: number, y: number, z: number] = [
-    -2, -0.5, -1.5,
-  ];
+  const startingMeshPosition: Vector3 = new Vector3(-0.5, 1, -0.25);
 
+  let positionMeshIndex = 0;
   const dispatch = createRawEventDispatcher();
   const { scene } = useThrelte();
+
+  onMount(() => {
+    console.log("Mounted scene.");
+    scene.background = new THREE_Color(css(rgb("hsl(220 10% 1%)")));
+  });
 
   // Framerate dependent counter, made independent from framerate using delta division
   useTask("deltaCount", (delta) => deltaCount(delta));
@@ -53,7 +65,7 @@
   function deltaCount(delta: number) {
     let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
     rate = rate ** 1.6 * 0.1;
-    $FrameCount = $FrameCount + delta / rate;
+    $Accumulator = $Accumulator + delta / rate;
   }
 
   // UI draw update when storage state machines update
@@ -67,18 +79,22 @@
       cubes.forEach((cube, i) => {
         if (get(storage[i]) === "filled") {
           $UI_ClassFSMs[i].fill(cube);
+        } else {
+          $UI_ClassFSMs[i].empty(cube);
         }
       });
     });
   });
 
-
-
-  function assignNodeColorStates(nodeIndex: number, colorPick: string): void {
-    // console.log("REF?", o.ref, nodeIndex);
+  function saveMeshColorInStore(o: { ref: Group; cleanUp: Function }): void {
+    if (!o.ref.isObject3D || o.ref.name !== "cube") return;
+    const mesh = o.ref;
+    //@ts-ignore
+    const colorPick: THREE_Color = mesh.color;
     const base = new THREE_Color(colorPick);
     const highlighted = new THREE_Color("red");
-    $UI_ClassFSMs[nodeIndex].assign({ base, highlighted });
+    $UI_ClassFSMs[positionMeshIndex].assign({ base, highlighted });
+    positionMeshIndex++;
   }
 
   /* Interactivity
@@ -123,26 +139,29 @@
   interactivity();
 </script>
 
-<div id="updater" />
 <T.PerspectiveCamera
   makeDefault
-  args={[20, 1, 0.1, 100]}
-  position={[elementsPerSide+2, elementsPerSide+2, elementsPerSide-2]}
+  position={[elementsPerSide - 2, elementsPerSide, elementsPerSide]}
+  zoom={2.5}
 >
   <OrbitControls
-    enableDamping
-    enableZoom
-    maxDistance="8"
-    minDistance="4"
-    minAzimuthAngle="-1"
-    maxAzimuthAngle="1"
-    enablePan="true"
-    zoomSpeed="0.1"
-    panSpeed="0.05"
+    mouseButtons={{ LEFT: 0, RIGHT: MOUSE.ROTATE }}
+    enableDamping={true}
+    enableZoom={true}
+    zoomToCursor={true}
+    zoomSpeed={0.1}
+    maxDistance={8}
+    minDistance={4}
+    minAzimuthAngle={-1}
+    maxAzimuthAngle={1}
+    enablePan={true}
+    panSpeed={0.05}
+    rotateSpeed={0.05}
   />
 </T.PerspectiveCamera>
 <RayCastPointer />
-<InstancedMesh position={bigInstancedMeshPosition} name="grid">
+
+<InstancedMesh position={startingMeshPosition.toArray()} name="grid">
   <RoundedBoxGeometry args={[radius, radius + 0.01, radius]} />
   <T.MeshStandardMaterial />
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
@@ -167,8 +186,7 @@
         />
         <Instance
           name="cube"
-          on:create={(o) =>
-            assignNodeColorStates(nodeIndex, palette[colorPick])}
+          on:create={(o) => saveMeshColorInStore(o)}
           on:click={(e) => {
             // left mouse button sends
             e.stopPropagation();

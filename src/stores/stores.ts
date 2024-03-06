@@ -28,7 +28,7 @@ export const ShowMiniBars: Writable<boolean> = writable(false);
 export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
-export const FrameCount: Writable<number> = writable(0);
+export const Accumulator: Writable<number> = writable(0);
 
 //---- Interpolation related stores -------------------
 
@@ -74,8 +74,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   //// Receiving messages from the host
   // register messages sent from the host
   registerMessagesFromHost: function () {
-    if ( get(UpdateStateFSM) !== "updatingHost"
-    ) {
+    if (get(UpdateStateFSM) !== "updatingHost") {
       globalThis.__receiveStateChange__ = function (state: any) {
         // trigger FSM transition
         UpdateStateFSM.updateFrom("host");
@@ -128,7 +127,6 @@ export const ParamIds: Writable<string[]> = writable(
 
 //--- parameter and presets stores -------------------
 
-
 export interface UINodeStyle {
   base: string | THREE.Color;
   highlighted?: string | THREE.Color;
@@ -150,15 +148,16 @@ export const UI_StoredPresets: Writable<UI_ControlsMap[]> = writable(
 // Sidebar controls
 export const UI_Controls: Writable<UI_ControlsMap> = writable(new Map());
 
+//--- Raycaster -----------------------------------------
 // Global export of current RayCast target
 export const CurrentPickedId: Writable<number> = writable(0);
 export const CurrentFocusId: Writable<number> = writable(0);
-// // todo: annotate, this holds UI control panel parameters
-// export const UI_Params: Writable<any> = writable({})
 
+//--- Console -----------------------------------------
 // a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
 
+//--- FSMs -----------------------------------------
 // Finite   ⤵︎
 // State    ⤵︎
 // Machines ⤵︎
@@ -173,7 +172,7 @@ function debounce(context: FSM, transition: string, delay: number) {
   //console.count("debounce function");
 }
 
-// global helper function for the array of FSMs
+// global helper function for array of FSMs
 export const getNodeStateAs = {
   number: (index: number) => {
     return Number(String(get(get(UI_StorageFSMs)[index])) === "filled" ? 1 : 0);
@@ -186,7 +185,7 @@ export const getNodeStateAs = {
 // simple toggle to lock a parameter in the UI
 export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
 const icon: any = get(LockIcon);
-// ⤵︎ Factory FSM object 
+// ⤵︎ Factory FSM object
 export const createLockFSM = function (): FSM {
   //@ts-ignore
   return fsm(icon.OPEN, {
@@ -203,7 +202,8 @@ export const createLockFSM = function (): FSM {
   });
 };
 
-export const LocksMap: Writable< Map<Element | string, FSM | boolean> > = writable(new Map());
+export const LocksMap: Writable<Map<Element | string, FSM | boolean>> =
+  writable(new Map());
 
 // ⤵︎ Machine for handling UI to Host communication
 
@@ -232,17 +232,17 @@ export function createNodeClassFSM(colors: any, index: number) {
   return fsm("empty", {
     empty: {
       assign(c) {
-        console.log("assigning colors ");
+        console.log("assigning colors ", colors);
         colors = c;
       },
       paint(eventObject) {
         eventObject.color.set(colors.base);
         return "empty";
       },
-      fill(eventObject) {
-        eventObject.color.set(colors.highlighted);
+      fill(eventObject?) {
+       if (eventObject) eventObject.color.set(colors.highlighted);
         return "filled";
-      },
+      }
     },
     filled: {
       assign(c) {
@@ -252,6 +252,11 @@ export function createNodeClassFSM(colors: any, index: number) {
         eventObject.color.set(colors.highlighted);
         return "filled";
       },
+      empty(eventObject?) {
+        if (eventObject) eventObject.color.set(colors.base);
+        console.log("emptying to ", colors.base);
+        return "empty";
+      }
     },
   });
 }
@@ -275,7 +280,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
     },
     filled: {
       randomise() {
-        return Math.random() > 0.5 ? "filled" : "empty";
+        return Math.random() < 0.5 ? "filled" : "empty";
       },
       getPreset(i) {
         return get(UI_StoredPresets)[i];
@@ -343,4 +348,3 @@ export const ErrorStore: Writable<any> = writable();
 
 //---- other stuff -------------------
 export const PixelDensity: Writable<number> = writable(2);
-

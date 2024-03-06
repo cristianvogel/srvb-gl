@@ -6,9 +6,12 @@
     NativeMessage,
     UI_Controls,
     UI_StorageFSMs,
+    UI_ClassFSMs
   } from "../stores/stores";
   import { Smush32 } from "@thi.ng/random";
-  import type { UI_ControlsMap, UI_Slider } from "../../types";
+  import type { StorageFSM, UI_ControlsMap, UI_Slider } from "../../types";
+  import { get } from "svelte/store";
+  import { updateClassStates } from "../utils/utils";
 
   function updateControls(e: Event) {
     let { value, dataset } = e.target as HTMLInputElement;
@@ -28,10 +31,11 @@
     const smush = new Smush32(0x909808303);
     const randomPreset = new Map($UI_Controls);
 
-    $UI_StorageFSMs.forEach((fsm) => {
-      fsm.storePreset(generateRandomPreset());
+    $UI_StorageFSMs.forEach((fsm: StorageFSM) => {
       fsm.randomise();
+      if ( get(fsm) ==='filled')  fsm.storePreset(generateRandomPreset()); 
     });
+ 
 
     function generateRandomPreset(): UI_ControlsMap {
       randomPreset.forEach((settings, key) => {
@@ -43,9 +47,11 @@
       });
       return randomPreset;
     }
-
     $UI_StorageFSMs = $UI_StorageFSMs;
+    updateClassStates()
+    $UI_ClassFSMs = $UI_ClassFSMs;
   }
+
 </script>
 
 <ParameterSynchronisation />
