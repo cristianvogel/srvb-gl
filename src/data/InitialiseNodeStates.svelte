@@ -10,8 +10,6 @@
     UI_StoredPresets,
   } from "../stores/stores";
   import type {  NodeLoadState  } from "../../types";
-  import { get } from "svelte/store";
-  import { updateClassStates } from "../utils/utils";
 
 
   // first, ping the host,
@@ -61,7 +59,5 @@
         i
       );
     }
-
-    updateClassStates()
   }
 </script>

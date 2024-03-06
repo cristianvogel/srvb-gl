@@ -232,7 +232,6 @@ export function createNodeClassFSM(colors: any, index: number) {
   return fsm("empty", {
     empty: {
       assign(c) {
-        console.log("assigning colors ", colors);
         colors = c;
       },
       paint(eventObject) {
@@ -254,7 +253,6 @@ export function createNodeClassFSM(colors: any, index: number) {
       },
       empty(eventObject?) {
         if (eventObject) eventObject.color.set(colors.base);
-        console.log("emptying to ", colors.base);
         return "empty";
       }
     },
@@ -273,7 +271,10 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         get(UI_StoredPresets)[index] = new Map(p);
         return "filled";
       },
-
+      clearPreset() {
+        get(UI_StoredPresets)[index] = new Map();
+        return "empty";
+      },
       resetTo(state) {
         return state;
       },
@@ -292,6 +293,10 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       resetTo(state) {
         return state;
       },
+      clearPreset() {
+        get(UI_StoredPresets)[index] = new Map();
+        return "empty";
+      }
     },
   });
 }

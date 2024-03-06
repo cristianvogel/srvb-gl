@@ -15,5 +15,5 @@ let slider: UI_Slider = { index:0, min: 0, max: 1, value: 0.5, step: 0.0001 , is
  $UI_Controls.set("smooth", { index: 5, min: 0, max: 1, value: 0.5, step: 0.01, isRegistered: false });
 </script>
 
-<Controls />
+<Controls on:smush />
 <ParameterLock />

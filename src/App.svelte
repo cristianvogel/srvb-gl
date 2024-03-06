@@ -22,9 +22,11 @@
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
   import type { UI_ControlsMap, UI_Slider } from "../types";
+  import PresetSmush from "./data/PresetSmush.svelte";
 
   let interpolator: Interpolation;
   let controlsSnapshot: UI_ControlsMap;
+  let smush: any; // binding to smush function in PresetSmush.svelte
 
   // Threlte Watch Utilities
   watch(Accumulator, () => {
@@ -38,9 +40,10 @@
     const sliders: Map<string, UI_Slider> =
       onlyRegisteredParams(controlsSnapshot);
 
-  // Main interpolation routine 
+    // Main interpolation routine
     if (interpolator?.isRunning) {
-      sliders.forEach((param: UI_Slider, key: string) => {    // 🤔 not sure why this is 'backwards' key and value
+      sliders.forEach((param: UI_Slider, key: string) => {
+        // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";
         const disabled = lock ? Boolean($LocksMap.get(key)) : false;
         param.value = $CurrentVectorInterp[param.index];
@@ -63,7 +66,7 @@
     interpolator.reset(0);
   }
 
-  // Call back for storing 
+  // Call back for storing
   // hooked on UI event
   function updateStateFSM(e: any) {
     controlsSnapshot = $UI_Controls;
@@ -80,19 +83,19 @@
   }
 </script>
 
-
 <InitialiseNodeStates />
+<PresetSmush bind:smush />
 <Container>
   <div id="css-renderer-target" />
   <div class="w-full" id="main">
-    <Canvas autoRender={true} >
+    <Canvas autoRender={true}>
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}
       />
       <CssScene />
     </Canvas>
-    <Sidebar />
+    <Sidebar on:smush = {smush} />
   </div>
 </Container>
 

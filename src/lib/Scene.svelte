@@ -24,8 +24,7 @@
     interactivity,
     RoundedBoxGeometry,
     Text,
-    PortalTarget,
-    TransformControls,
+    PortalTarget
   } from "@threlte/extras";
   import { arrayIterator, fillRange } from "@thi.ng/arrays";
   import {

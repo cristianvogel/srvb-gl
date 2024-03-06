@@ -15,14 +15,3 @@ export function onlyRegisteredParams(
   );
   return onlyRegisteredParams;
 }
-
-// EXPLICITLY set the UI_ClassFSMs to the correct state
- export function updateClassStates() {   
-    for (let i = 0; i < manifest.NUMBER_NODES; i++) {
-      if (get(get(UI_StorageFSMs)[i]) === "empty") {
-        get(UI_ClassFSMs)[i].empty();
-      } else {
-        get(UI_ClassFSMs)[i].fill();
-      }
-    }
-  }
