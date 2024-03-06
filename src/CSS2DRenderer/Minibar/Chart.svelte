@@ -1,27 +1,30 @@
 <!--  Welcome to the Mini Bar -->
-<script>
+<script lang='ts'>
+  import type { Vec } from "@thi.ng/vectors";
+  import type { UI_ControlsMap, UI_Preset } from "../../../types";
   import Bar from "./Bar.svelte";
-  import { CurrentPickedId, ShowMiniBars } from "../../stores/stores";
 
-  export let dataForChart;
+  export let storedPreset: UI_ControlsMap;
 
-  const { parameters } = dataForChart;
-  const paramKeys = Object.keys(parameters);
-  const paramValues = paramKeys.map((key) => parameters[key].value);
+let snapshot: UI_ControlsMap
+$: snapshot  = storedPreset;
+$: validPreset = storedPreset?.size > 0
+
+
 </script>
 
+{#if validPreset }
 <div style="gap:0">
- 
-    {#each paramKeys as paramKey, i}
+    {#each [...snapshot] as [paramId, settings]}
       <div style="height: 1.25rem">
-        <p class="minibar-label">{paramKey}</p>
+        <p class="minibar-label">{paramId}</p>
         <svg height="16px">
-          <Bar value={paramValues[i]} />
+          <Bar value={settings.value} />
         </svg>
       </div>
     {/each}
- 
 </div>
+{/if}
 
 <style>
   .minibar-label {

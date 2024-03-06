@@ -1,8 +1,11 @@
 <!-- Minibar.svelte -->
 <script>
+  import { cubicIn } from "svelte/easing";
   import { tweened } from "svelte/motion";
   export let value = 0;
-  const readout = tweened(0);
+  const readout = tweened(0,
+  {duration: 150, easing: cubicIn}
+  );
 
   readout.set(value);
 </script>

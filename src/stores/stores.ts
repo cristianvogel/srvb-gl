@@ -11,15 +11,16 @@ import fsm from "svelte-fsm";
 
 import type {
   ClassFSM,
-  HostParameterDefinition,
   LocalManifest,
   NativeMessages,
   NodeLoadState,
-  Preset,
   StorageFSM,
+  HostParameter,
+  UI_ControlsMap,
 } from "../../types";
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import type { Vec } from "@thi.ng/vectors";
 
 //-------- new Threlte related stores --------------------
 export const RayCastPointerPosition: Writable<Vector2Tuple> = writable([0, 0]);
@@ -27,10 +28,17 @@ export const ShowMiniBars: Writable<boolean> = writable(false);
 export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
+export const Accumulator: Writable<number> = writable(0);
+
+//---- Interpolation related stores -------------------
+
+export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
 
 // ---- native interops -------------------
 
 export const NativeMessage: Writable<NativeMessages> = writable({
+  //// Sending messages to the host
+
   // store any persistent UI state in the host
   // serialisation happens here
   setViewState: function (viewState: any) {
@@ -57,36 +65,44 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       });
     }
   },
-  // register messages sent from the host
-  registerMessagesFromHost: function () {
-    globalThis.__receiveStateChange__ = function (state: any) {
-      // trigger FSM transition
-      UpdateStateFSM.updateFrom("host");
-      // then deserialize and store the received state
-      HostState.set(JSON.parse(state)); // deserialization esssential
-    };
-    globalThis.__receiveError__ = function (error: any) {
-      // do something more useful here?
-      ErrorStore.set(error);
-    };
-  },
   // send a ready message to the host
   requestReady: function () {
     if (typeof globalThis.__postNativeMessage__ === "function") {
       globalThis.__postNativeMessage__("ready", {});
     }
   },
+  //// Receiving messages from the host
+  // register messages sent from the host
+  registerMessagesFromHost: function () {
+    if (get(UpdateStateFSM) !== "updatingHost") {
+      globalThis.__receiveStateChange__ = function (state: any) {
+        // trigger FSM transition
+        UpdateStateFSM.updateFrom("host");
+        // then deserialize and store the received state as a Map
+        // Transpose incoming state which has the form of  <k,v>
+        const entries: any = Object.entries(JSON.parse(state));
+        // into a TS Map and store in HostState
+        HostState.set(new Map(entries));
+      };
+
+      // error handling
+      globalThis.__receiveError__ = function (error: any) {
+        // do something more useful here?
+        ErrorStore.set(error);
+      };
+    }
+  },
 });
 
 //-----------------  UI defs and parameters -------------------
 
-const NUMBER_NODES = 36;
+const NUMBER_NODES = 8 * 8;
 export const manifest: LocalManifest = {
   NUMBER_NODES,
   NUMBER_PARAMS: 4,
   window: {
-    width: 800,
-    height: 444,
+    width: 575,
+    height: 930,
   },
   // ---- Parameters  -------------------
   // The order of Entries in the parameters object her
@@ -101,18 +117,15 @@ export const manifest: LocalManifest = {
 };
 
 //---- registered audio parameters -------------------
-export const ParamDefsHost: Writable<HostParameterDefinition[]> = writable(
+export const ParamDefsHost: Writable<HostParameter[]> = writable(
   manifest.parameters
 );
 // registered audio parameters for UI
 export const ParamIds: Writable<string[]> = writable(
-  manifest.parameters.map((p: HostParameterDefinition) => p.paramId)
+  manifest.parameters.map((p: HostParameter) => p.paramId)
 );
 
 //--- parameter and presets stores -------------------
-export interface LocksStoreEntry {
-  [key: string]: number;
-}
 
 export interface UINodeStyle {
   base: string | THREE.Color;
@@ -129,19 +142,22 @@ export const UI_StorageFSMs: Writable<StorageFSM[]> = writable([]);
 // Seperate store for Class and Styles
 export const UI_ClassFSMs: Writable<ClassFSM[]> = writable([]);
 // Seperate store for Presets
-export const UI_StoredPresets: Writable<Preset[]> = writable(
-  Array(NUMBER_NODES).fill({ index: -1, name: "-1", parameters: {} })
+export const UI_StoredPresets: Writable<UI_ControlsMap[]> = writable(
+  Array(NUMBER_NODES).fill(new Map())
 );
+// Sidebar controls
+export const UI_Controls: Writable<UI_ControlsMap> = writable(new Map());
+
+//--- Raycaster -----------------------------------------
 // Global export of current RayCast target
 export const CurrentPickedId: Writable<number> = writable(0);
-// // todo: annotate, this holds UI control panel parameters
-// export const UI_Params: Writable<any> = writable({})
-// Sidebar controls
-export const UI_Controls: Writable<any> = writable({});
+export const CurrentFocusId: Writable<number> = writable(0);
 
+//--- Console -----------------------------------------
 // a console for debugging or user feedback
 export const ConsoleText: Writable<string> = writable("Console:");
 
+//--- FSMs -----------------------------------------
 // Finite   ⤵︎
 // State    ⤵︎
 // Machines ⤵︎
@@ -156,7 +172,7 @@ function debounce(context: FSM, transition: string, delay: number) {
   //console.count("debounce function");
 }
 
-// global helper function for the array of FSMs
+// global helper function for array of FSMs
 export const getNodeStateAs = {
   number: (index: number) => {
     return Number(String(get(get(UI_StorageFSMs)[index])) === "filled" ? 1 : 0);
@@ -166,10 +182,10 @@ export const getNodeStateAs = {
   },
 };
 
-// ⤵︎ Factory object for simple toggle to lock a parameter in the UI
+// simple toggle to lock a parameter in the UI
 export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
-
 const icon: any = get(LockIcon);
+// ⤵︎ Factory FSM object
 export const createLockFSM = function (): FSM {
   //@ts-ignore
   return fsm(icon.OPEN, {
@@ -186,6 +202,9 @@ export const createLockFSM = function (): FSM {
   });
 };
 
+export const LocksMap: Writable<Map<Element | string, FSM | boolean>> =
+  writable(new Map());
+
 // ⤵︎ Machine for handling UI to Host communication
 
 export const UpdateStateFSM = fsm("ready", {
@@ -197,7 +216,7 @@ export const UpdateStateFSM = fsm("ready", {
   },
   updatingHost: {
     _enter() {
-      (this.set as unknown as Debounced).debounce(2);
+      (this.set as unknown as Debounced).debounce(1);
     },
     set: "ready",
   },
@@ -213,17 +232,16 @@ export function createNodeClassFSM(colors: any, index: number) {
   return fsm("empty", {
     empty: {
       assign(c) {
-        console.log( "assigning colors " )
         colors = c;
       },
       paint(eventObject) {
         eventObject.color.set(colors.base);
         return "empty";
       },
-      fill(eventObject) {
-        eventObject.color.set(colors.highlighted);
+      fill(eventObject?) {
+       if (eventObject) eventObject.color.set(colors.highlighted);
         return "filled";
-      },
+      }
     },
     filled: {
       assign(c) {
@@ -233,7 +251,10 @@ export function createNodeClassFSM(colors: any, index: number) {
         eventObject.color.set(colors.highlighted);
         return "filled";
       },
-    
+      empty(eventObject?) {
+        if (eventObject) eventObject.color.set(colors.base);
+        return "empty";
+      }
     },
   });
 }
@@ -246,9 +267,13 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
       storePreset(p) {
-        get(UI_StoredPresets)[index] = p;
-        // console.log( 'store preset called inside FSM ', index, ' with preset: ', p );
+        console.log("store preset data", p);
+        get(UI_StoredPresets)[index] = new Map(p);
         return "filled";
+      },
+      clearPreset() {
+        get(UI_StoredPresets)[index] = new Map();
+        return "empty";
       },
       resetTo(state) {
         return state;
@@ -256,15 +281,22 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
     },
     filled: {
       randomise() {
-        return Math.random() > 0.5 ? "filled" : "empty";
+        return Math.random() < 0.5 ? "filled" : "empty";
+      },
+      getPreset(i) {
+        return get(UI_StoredPresets)[i];
       },
       storePreset(p) {
-        get(UI_StoredPresets)[index] = p;
+        get(UI_StoredPresets)[index] = new Map(p);
         return "filled";
       },
       resetTo(state) {
         return state;
       },
+      clearPreset() {
+        get(UI_StoredPresets)[index] = new Map();
+        return "empty";
+      }
     },
   });
 }
@@ -316,17 +348,8 @@ export const ConsoleFSM = fsm("start", {
 // ---- state synchronisation -------------------
 
 // custom store that holds received host state
-export const HostState: Writable<any> = writable();
+export const HostState: Writable<Map<string, any>> = writable();
 export const ErrorStore: Writable<any> = writable();
 
 //---- other stuff -------------------
 export const PixelDensity: Writable<number> = writable(2);
-
-// todo;;;; look at this?
-// specify an empty object with valid param keys for the locks store
-// otherwise the UI will break
-const emptyLocksObject: LocksStoreEntry = {};
-for (const paramId of get(ParamIds)) {
-  emptyLocksObject[paramId] = 0;
-}
-export const LocksStore: Writable<{}> = writable(emptyLocksObject);

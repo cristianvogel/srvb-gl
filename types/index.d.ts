@@ -4,44 +4,55 @@
 import type { Color, Object3D } from "three";
 import type { UINodeStyle } from "../src/stores/stores";
 
-export type HostParameterDefinition = {
-  paramId: string;
-  name: string;
-  min: number;
-  max: number;
-  defaultValue: number;
+export type HostParameter = {
+  paramId: any;
+  name?: string;
+  value?: number;
+  min?: number;
+  max?: number;
+  defaultValue?: number;
+};
+
+export type UI_ControlsMap = Map<string, UI_Slider>;
+
+export interface UI_ParameterController {
+ [paramId: string]:  UI_Slider
+};
+
+export type UI_Slider = {
+  index: number ;
+  min: number | undefined;
+  max: number | undefined;
+  value: number | undefined;
+  step: number | undefined;
+  isRegistered: boolean; // is the parameter registered with the host or does it exist in UI only
+};
+
+export interface UI_Preset {
+  index: number;
+  name?: string;
+  color?: UINodeStyle;
+  parameters: UI_ControlsMap;
+  eventObject?: Object3D;
 };
 
 export type LocalManifest = {
   window: { width: number; height: number };
-  parameters: HostParameterDefinition[];
+  parameters: HostParameter[];
   NUMBER_NODES: number;
   NUMBER_PARAMS: number;
   sampleRate?: number;
   viewState?: any;
 };
 
-export type UIParameterDefinition = {
-  min: number;
-  max: number;
-  value: number;
-  step: number;
-};
 
-export type Parameter = {
-  paramId: string;
-  label?: string;
-  name: string;
-  value: number;
-};
+// export type ParameterDef = {
+//   paramId: any;
+//   value: number;
+//   [key: string]: any;
+// };
 
-export type Preset = {
-  index: number;
-  name?: string;
-  color?: UINodeStyle;
-  parameters: Parameter[];
-  eventObject: Object3D;
-};
+
 
 export type NodeLoadState = 'empty' | 'filled' 
 

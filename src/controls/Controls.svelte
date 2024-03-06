@@ -1,131 +1,79 @@
 <script lang="ts">
-  import type { Writable } from "svelte/store";
-  import ParameterChange from "../data/ParameterChange.svelte";
-  import { ConsoleText, NativeMessage, UpdateStateFSM } from "../stores/stores";
+  import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
+  import {
+    ConsoleText,
+    LocksMap,
+    NativeMessage,
+    UI_Controls
+  } from "../stores/stores";
 
-  export let UI_Controls: Writable<any>;
+  import type { UI_Slider } from "../../types";
 
-  
-  const entries: any = Object.entries($UI_Controls);
-
-  const isNotEmpty = entries.length > 0;
-
-  const is = {
-    number: (value: any) => typeof value === "number",
-    boolean: (value: any) => typeof value === "boolean",
-    text: (value: any) => typeof value === "string" && !value.startsWith("#"),
-    color: (value: any) => typeof value === "string" && value.startsWith("#"),
-    range: (value: any) => typeof value === "object" && value.step, // && param
-  };
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
 
   function updateControls(e: Event) {
-    let { value, type, dataset, checked, step, min, max } =
-      e.target as HTMLInputElement;
-
-    let key = dataset.key!;
-    switch (type) {
-      case "range":
-        if (e.type === "wheel") {
-          let direction = (e as WheelEvent).deltaY < 0 ? "up" : "down";
-          if (direction === "up") {
-            $UI_Controls[key].value < max && ($UI_Controls[key].value += +step);
-          } else {
-            $UI_Controls[key].value > min && ($UI_Controls[key].value -= +step);
-          }
-        } else {
-          $UI_Controls[key].value = +value;
-        }
-        break;
-
-      case "checkbox":
-        $UI_Controls[key] = checked;
-        break;
-
-      case "number":
-        $UI_Controls[key] = +value;
-        break;
-
-      default:
-        $UI_Controls[key] = value;
-    } 
- 
-    if ($UpdateStateFSM !== "updatingUI") {
-    // todo: locks
-    //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
-
-    $NativeMessage.requestParamValueUpdate(key, $UI_Controls[key].value);
-    }
-      
+    let { value, dataset } = e.target as HTMLInputElement;
+    let key = dataset.key! as string;
+    const sliderSettings: UI_Slider | undefined = $UI_Controls.get(key);
+    if (sliderSettings) $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
+    $UI_Controls = $UI_Controls;
+      // todo: locks
+      //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
+      $NativeMessage.requestParamValueUpdate(
+        key,
+        $UI_Controls.get(key)?.value as number
+      );
   }
+
+
 </script>
 
-<ParameterChange controls = { UI_Controls } />
+<ParameterSynchronisation />
 
-{#if isNotEmpty}
-  <div class="sidebar">
-    <pre>{$ConsoleText}</pre>
-    <h3 class="heading">Controls</h3>
+<div class="sidebar">
+  <pre>{$ConsoleText}</pre>
+  <button class="button" on:click={()=>dispatch('smush')}>Smush</button>
+  <h3 class="heading">Controls</h3>
 
-    {#each entries as [label, value]}
-      {#if is.range(value)}
-        <label>
-          {label}
-          <input
-            id="sidebar_range"
-            on:input={updateControls}
-            on:wheel={updateControls}
-            data-key={label}
-            value={$UI_Controls[label].value}
-            min={$UI_Controls[label].min}
-            max={$UI_Controls[label].max}
-            step={$UI_Controls[label].step}
-            type="range"
-          />
-          <div class="readout">
-            {Number($UI_Controls[label].value).toFixed(2)}
-          </div>
-          <div
-            id="sidebar_range_lock"
-            data-key={"lock_" + label}
-            class="col-start-5 col-span-1 text-xs my-1 text-green-500"
-          ></div>
-        </label>
-      {/if}
-
-      {#if is.text(value)}
-        <label>
-          {label}
-          <input
-            on:input={updateControls}
-            checked={$UI_Controls[label]}
-            data-key={label}
-            type="text"
-          />
-        </label>
-      {/if}
-
-      {#if is.color(value)}
-        <label>
-          {label}
-          <input
-            on:input={updateControls}
-            value={$UI_Controls[label]}
-            data-key={label}
-            type="color"
-          />
-        </label>
-      {/if}
+  {#if $UI_Controls.size}
+    {#each $UI_Controls as [paramId, slider]}
+      {@const { step, min, max, value } = slider}
+      {@const lock = $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean" }
+      {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false }
+      <label>
+        {paramId}
+        <input
+          id={`slider_${paramId}`}
+          on:input={updateControls}
+          on:wheel={updateControls}
+          data-key={paramId}
+          {value}
+          {min}
+          {max}
+          {step}
+          {disabled}
+          type="range"
+        />
+        <div class="readout">
+          {Number(slider.value).toFixed(2)}
+        </div>
+        <div
+          id="sidebar_range_lock"
+          data-key={"lock_" + paramId}
+          class="col-start-5 col-span-1 text-xs my-1 text-green-500"
+        ></div>
+      </label>
     {/each}
-  </div>
-{/if}
+  {/if}
+</div>
 
 <style>
-
   pre {
     font-size: 0.75rem;
-    color: slategray;
+    color: chartreuse;
   }
-  
+
   .sidebar {
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));
@@ -150,6 +98,10 @@
     align-items: center;
     justify-items: end;
     font-weight: 600;
+  }
+
+  .sidebar label :disabled {
+    opacity: 0.5;
   }
 
   .sidebar input[type="range"] {
@@ -192,7 +144,7 @@
 
   .sidebar .readout {
     font-size: 0.75rem;
-    color: slategray;
+    color: lightblue;
   }
 
   .sidebar .heading {

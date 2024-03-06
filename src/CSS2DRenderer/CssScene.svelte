@@ -1,21 +1,19 @@
 <script lang="ts">
-  import { T, useTask, useThrelte } from '@threlte/core'
+  import { T, useTask, useThrelte, watch } from '@threlte/core'
   import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
   import CssObject from './CssObject.svelte'
-  import { RayCastPointerPosition, CSSRenderer } from '../stores/stores';
+  import { RayCastPointerPosition } from '../stores/stores';
   import Minibars from './Minibars.svelte';
 
- 
   const { scene, size, autoRenderTask, camera } = useThrelte()
+
+
 
   // Set up the CSS2DRenderer to run in a div placed atop the <Canvas>
   const element = document.querySelector('#css-renderer-target') as HTMLElement
-  $CSSRenderer = new CSS2DRenderer( { element })
-  $CSSRenderer.setSize($size.width, $size.height)
+  const CSSRenderer = new CSS2DRenderer( { element })
 
-  $:console.log( 'CssScene ►' + $CSSRenderer.getSize() )
-  
-
+  CSSRenderer.setSize($size.width, $size.height)
   // We are running two renderers, and don't want to run
   // updateMatrixWorld twice; tell the renderers that we'll handle
   // it manually.
@@ -38,15 +36,13 @@
   useTask(
     () => {
       // Update the DOM
-      $CSSRenderer.render(scene, camera.current)
+      CSSRenderer.render(scene, camera.current)
     },
     {
       after: autoRenderTask,
       autoInvalidate: false
     }
   )
-
-
 </script>
 
 
@@ -56,8 +52,7 @@
   pointerEvents={false}
 >
   <Minibars />
-  <T.Mesh slot="three">
-  </T.Mesh>
+  
 </CssObject>
 
 
