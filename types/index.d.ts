@@ -45,15 +45,6 @@ export type LocalManifest = {
   viewState?: any;
 };
 
-
-// export type ParameterDef = {
-//   paramId: any;
-//   value: number;
-//   [key: string]: any;
-// };
-
-
-
 export type NodeLoadState = 'empty' | 'filled' 
 
 export type StorageFSM = ReturnType<typeof createNodeStateFSM>;

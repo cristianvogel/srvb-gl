@@ -28,6 +28,8 @@
   let smush: any; // binding to smush function in PresetSmush.svelte
 
   // Threlte Watch Utilities
+  // 👀
+  // Watch single Accumulator used for vector interpolation
   watch(Accumulator, () => {
     interpolator?.update($Accumulator);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
@@ -38,6 +40,8 @@
     controlsSnapshot = $UI_Controls;
     const sliders: Map<string, UI_Slider> =
       onlyRegisteredParams(controlsSnapshot);
+
+      if (!interpolator?.isRunning) $Accumulator = -1;
 
     // Main interpolation routine
     if (interpolator?.isRunning) {
@@ -65,7 +69,7 @@
     interpolator.reset(0);
   }
 
-  // Call back for storing
+  // Call back for storage updates
   // hooked on UI event
   function updateStateFSM(e: any) {
     controlsSnapshot = $UI_Controls;
@@ -73,33 +77,30 @@
     $UI_StorageFSMs[$CurrentPickedId].storePreset(params);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
-    // had to manually get the current state key of each store
+    // manually get the current state key of each store
     let persisentState = {
       nodes: $UI_StorageFSMs.map((fsm) => get(fsm)),
       presets: $UI_StoredPresets,
     };
     $NativeMessage.setViewState(persisentState);
   }
+
+
 </script>
 
 <InitialiseNodeStates />
-
 <PresetSmush bind:smush />
+<Sidebar on:smush = {smush} />
 
   <div id="css-renderer-target" />
-
     <Canvas autoRender={true} size = { { width: 575, height: 575 * 1.618 } }>
-
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}
       />
-
       <CssScene />
-
     </Canvas>
-
-    <Sidebar on:smush = {smush} />
+    
 
 
 <style>

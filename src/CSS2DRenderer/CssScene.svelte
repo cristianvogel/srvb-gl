@@ -1,13 +1,11 @@
 <script lang="ts">
-  import { T, useTask, useThrelte, watch } from '@threlte/core'
+  import { useTask, useThrelte } from '@threlte/core'
   import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
   import CssObject from './CssObject.svelte'
   import { RayCastPointerPosition } from '../stores/stores';
   import Minibars from './Minibars.svelte';
 
   const { scene, size, autoRenderTask, camera } = useThrelte()
-
-
 
   // Set up the CSS2DRenderer to run in a div placed atop the <Canvas>
   const element = document.querySelector('#css-renderer-target') as HTMLElement

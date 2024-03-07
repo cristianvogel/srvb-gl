@@ -4,43 +4,60 @@
     ConsoleText,
     LocksMap,
     NativeMessage,
-    UI_Controls
+    UI_Controls,
   } from "../stores/stores";
-
+  import { tweened } from "svelte/motion";
   import type { UI_Slider } from "../../types";
 
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
+  import { cubicIn } from "svelte/easing";
   const dispatch = createEventDispatcher();
+
+  const scale = tweened(1, {
+    duration: 100,
+    easing: cubicIn,
+  });
 
   function updateControls(e: Event) {
     let { value, dataset } = e.target as HTMLInputElement;
     let key = dataset.key! as string;
     const sliderSettings: UI_Slider | undefined = $UI_Controls.get(key);
-    if (sliderSettings) $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
+    if (sliderSettings)
+      $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
     $UI_Controls = $UI_Controls;
-      // todo: locks
-      //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
-      $NativeMessage.requestParamValueUpdate(
-        key,
-        $UI_Controls.get(key)?.value as number
-      );
+    // todo: locks
+    //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
+    $NativeMessage.requestParamValueUpdate(
+      key,
+      $UI_Controls.get(key)?.value as number
+    );
   }
-
-
 </script>
 
 <ParameterSynchronisation />
 
 <div class="sidebar">
   <pre>{$ConsoleText}</pre>
-  <button class="button" on:click={()=>dispatch('smush')}>Smush</button>
+  <button
+    class="button"
+    on:mouseenter={() => scale.set(1.1)}
+    on:mouseleave={() => scale.set(1)}
+    on:click={() => {
+      dispatch("smush");
+      scale.set(0.98);
+    }}
+    style={`transform: scale(${$scale})`}
+  >
+    Smush
+  </button>
   <h3 class="heading">Controls</h3>
 
   {#if $UI_Controls.size}
     {#each $UI_Controls as [paramId, slider]}
       {@const { step, min, max, value } = slider}
-      {@const lock = $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean" }
-      {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false }
+      {@const lock =
+        $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
+      {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
       <label>
         {paramId}
         <input
@@ -72,6 +89,20 @@
   pre {
     font-size: 0.75rem;
     color: chartreuse;
+  }
+
+  .sidebar button {
+    background-color: var(--button-background-color, #142e52);
+    border: none;
+    color: rgb(0, 216, 254);
+    padding: 12px 12px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 15px;
   }
 
   .sidebar {

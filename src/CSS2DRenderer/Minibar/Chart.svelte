@@ -1,15 +1,15 @@
 <!--  Welcome to the Mini Bar -->
 <script lang='ts'>
-  import type { Vec } from "@thi.ng/vectors";
-  import type { UI_ControlsMap, UI_Preset } from "../../../types";
+
+  import type { UI_ControlsMap } from "../../../types";
   import Bar from "./Bar.svelte";
 
   export let storedPreset: UI_ControlsMap;
+  export let paint: any;
 
 let snapshot: UI_ControlsMap
 $: snapshot  = storedPreset;
 $: validPreset = storedPreset?.size > 0
-
 
 </script>
 
@@ -19,7 +19,7 @@ $: validPreset = storedPreset?.size > 0
       <div style="height: 1.25rem">
         <p class="minibar-label">{paramId}</p>
         <svg height="16px">
-          <Bar value={settings.value} />
+          <Bar value={settings.value} {paint}/>
         </svg>
       </div>
     {/each}
