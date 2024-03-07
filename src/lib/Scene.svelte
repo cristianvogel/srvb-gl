@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import type { UI_ControlsMap, UI_Preset } from "../../types";
-  import { asVec4, Vec4, type Vec } from "@thi.ng/vectors";
+  import { Vec4 } from "@thi.ng/vectors";
 
   import RayCastPointer from "./RayCastPointer.svelte";
   import {
@@ -24,7 +24,6 @@
   } from "@thi.ng/color";
   import { MOUSE, Color as THREE_Color, Vector3 } from "three";
   import {
-    Instance,
     InstancedMesh,
     OrbitControls,
     interactivity,
@@ -45,6 +44,7 @@
   import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { degToRad } from "three/src/math/MathUtils.js";
+  import Cube from "./Cube.svelte";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));
@@ -66,8 +66,10 @@
     $Accumulator = $Accumulator + delta / rate;
   }
 
-  // UI draw update when storage state machines update
+  // UI paint update when storage state machines update.
   // goes through every mesh in the instanced mesh object
+  //
+  // todo: optimise to use a Map accessor or maybe WeakMap ?
   watch(UI_StorageFSMs, (storage) => {
     let gridComponents = scene.children.filter(
       (component) => component.name === "grid"
@@ -173,7 +175,7 @@
           y: y,
           z: (z - 1) / 2,
         }}
-        {@const t_paint =  color(palette[colorPick]) }
+        {@const t_paint = color(palette[colorPick])}
 
         <Text
           name="label"
@@ -184,31 +186,31 @@
           color={palette[colorPick - 2]}
         />
 
-        <Instance
-          name="cube"
-          on:create={(o) => {
-            $UI_ClassFSMs[nodeIndex].assign({
-              base: palette[colorPick],
-              highlighted: rgbCss(
-                tint( new Vec4() , hsv(css("#c439b8")),  (1- luminance(t_paint)) ** 0.125, 0.25 )
-              ),
-            });
+        <Cube
+          {nodeIndex}
+          colors={{
+            base: palette[colorPick],
+            highlighted: rgbCss(
+              tint(
+                new Vec4(),
+                hsv(css("#c439b8")),
+                (1 - luminance(t_paint)) ** 0.125,
+                0.25
+              )
+            ),
           }}
-          on:click={(e) => {
-            e.stopPropagation();
-            nodeClick(e);
+          position={pos}
+          accumulator={$CurrentPickedId === nodeIndex &&
+          get($UI_StorageFSMs[nodeIndex]) === "filled"
+            ? Accumulator
+            : null}
+          handlers={{
+            nodeClick,
+            nodeRightClick,
+            nodeEnter,
+            nodeLeave,
+            nodePointer,
           }}
-          on:contextmenu={(e) => {
-            // right mouse button stores
-            e.stopPropagation();
-            nodeRightClick(e);
-          }}
-          on:pointerenter={nodeEnter}
-          on:pointerleave={nodeLeave}
-          on:pointermove={nodePointer}
-          color={palette[colorPick]}
-          position={[pos.x, pos.y, pos.z]}
-          rotation={[0, 0, ($Accumulator + nodeIndex) * 0.01]}
         />
       {/each}
     {/each}

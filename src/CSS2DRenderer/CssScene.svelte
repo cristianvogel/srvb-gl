@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { T, useTask, useThrelte, watch } from '@threlte/core'
+  import { useTask, useThrelte } from '@threlte/core'
   import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
   import CssObject from './CssObject.svelte'
   import { RayCastPointerPosition } from '../stores/stores';

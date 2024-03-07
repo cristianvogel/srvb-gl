@@ -29,9 +29,9 @@ export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
 export const Accumulator: Writable<number> = writable(0);
+export const Accumulators: Writable<typeof Accumulator[]> = writable([]);
 
 //---- Interpolation related stores -------------------
-
 export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
 
 // ---- native interops -------------------

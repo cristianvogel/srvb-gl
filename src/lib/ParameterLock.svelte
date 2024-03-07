@@ -37,12 +37,10 @@
 
   function lockParam(event: any) {
     //console.log(event.target as Element);
-    const name = event.target.dataset.key.split("_")[1];
     const button = event.target;
 
     // toggle the FSM linked to the Label/Button (see Map definition)
     // and add a simple bool rep keyed with paramID to the LocksMap in the store
-
       const lock = event.target as HTMLInputElement;
       const linkedParam =  (lock.dataset.key?.split('_')[1]) as string; // need to format a bit, comes in via the data-key prop on the HTML Element
       lockFSM = $LocksMap.get(lock) as FSM;

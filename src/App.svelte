@@ -28,6 +28,8 @@
   let smush: any; // binding to smush function in PresetSmush.svelte
 
   // Threlte Watch Utilities
+  // 👀
+  // Watch single Accumulator used for vector interpolation
   watch(Accumulator, () => {
     interpolator?.update($Accumulator);
     CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
@@ -65,7 +67,7 @@
     interpolator.reset(0);
   }
 
-  // Call back for storing
+  // Call back for storage updates
   // hooked on UI event
   function updateStateFSM(e: any) {
     controlsSnapshot = $UI_Controls;
@@ -73,7 +75,7 @@
     $UI_StorageFSMs[$CurrentPickedId].storePreset(params);
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
-    // had to manually get the current state key of each store
+    // manually get the current state key of each store
     let persisentState = {
       nodes: $UI_StorageFSMs.map((fsm) => get(fsm)),
       presets: $UI_StoredPresets,
