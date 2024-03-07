@@ -47,6 +47,10 @@ export class Interpolation {
   }
 
   update(t: number) {
+    if (this.t >= 100) {
+      this.isRunning = false;
+      return;
+    }
     this.t = t;
   }
 

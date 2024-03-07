@@ -41,6 +41,8 @@
     const sliders: Map<string, UI_Slider> =
       onlyRegisteredParams(controlsSnapshot);
 
+      if (!interpolator?.isRunning) $Accumulator = -1;
+
     // Main interpolation routine
     if (interpolator?.isRunning) {
       sliders.forEach((param: UI_Slider, key: string) => {

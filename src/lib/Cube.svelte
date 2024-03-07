@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Instance } from "@threlte/extras";
-  import { UI_ClassFSMs } from "../stores/stores";
+  import { UI_ClassFSMs, UI_Controls } from "../stores/stores";
 
   export let nodeIndex: number
   export let colors: {base: string, highlighted: string}
@@ -36,5 +36,5 @@ on:pointerleave={handlers.nodeLeave}
 on:pointermove={handlers.nodePointer}
 color={colors.base}
 position={ [position.x, position.y, position.z]}
-rotation={ [0, 0, ( $accumulator ? ($accumulator + nodeIndex) * 0.01 : 0)]}
+rotation={ [0, 0, ( $accumulator >=0 ? $accumulator * (1.01 - ($UI_Controls.get('smooth')?.value ?? 0)) : 0)]}
 />
