@@ -7,8 +7,6 @@
 
   const { scene, size, autoRenderTask, camera } = useThrelte()
 
-
-
   // Set up the CSS2DRenderer to run in a div placed atop the <Canvas>
   const element = document.querySelector('#css-renderer-target') as HTMLElement
   const CSSRenderer = new CSS2DRenderer( { element })

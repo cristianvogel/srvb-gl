@@ -254,6 +254,9 @@ export function createNodeClassFSM(colors: any, index: number) {
       empty(eventObject?) {
         if (eventObject) eventObject.color.set(colors.base);
         return "empty";
+      },
+      base() {
+        return colors.base;
       }
     },
   });

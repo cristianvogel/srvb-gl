@@ -80,26 +80,23 @@
     };
     $NativeMessage.setViewState(persisentState);
   }
+
+
 </script>
 
 <InitialiseNodeStates />
-
 <PresetSmush bind:smush />
+<Sidebar on:smush = {smush} />
 
   <div id="css-renderer-target" />
-
     <Canvas autoRender={true} size = { { width: 575, height: 575 * 1.618 } }>
-
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}
       />
-
       <CssScene />
-
     </Canvas>
-
-    <Sidebar on:smush = {smush} />
+    
 
 
 <style>
