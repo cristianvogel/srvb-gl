@@ -5,17 +5,28 @@
     CurrentFocusId,
     ShowMiniBars,
     UI_StoredPresets,
-    UI_ClassFSMs
+    UI_ClassFSMs,
+
+    UI_Controls
+
   } from "../stores/stores";
   import Chart from "./Minibar/Chart.svelte";
 
   let preset: UI_ControlsMap ;
-  $: preset= $UI_StoredPresets[$CurrentFocusId];
+  $: { 
+    if ($UI_StoredPresets.length > 0 && $CurrentFocusId in $UI_StoredPresets) {
+      preset = $UI_StoredPresets[$CurrentFocusId];
+    } else {
+      preset = $UI_Controls;
+      console.log('no preset found');
+    }
+  }
+
 </script>
 
 <div class="minibar">
 {#if $ShowMiniBars }
-    <Chart storedPreset={preset} paint={  $UI_ClassFSMs[$CurrentFocusId].base()  } />
+    <Chart storedPreset={preset} />
 {/if}
 </div>
 

@@ -5,7 +5,6 @@
   import Bar from "./Bar.svelte";
 
   export let storedPreset: UI_ControlsMap;
-  export let paint: any;
 
 let snapshot: UI_ControlsMap
 $: snapshot  = storedPreset;
@@ -19,7 +18,7 @@ $: validPreset = storedPreset?.size > 0
       <div style="height: 1.25rem">
         <p class="minibar-label">{paramId}</p>
         <svg height="16px">
-          <Bar value={settings.value} {paint}/>
+          <Bar value={settings.value} />
         </svg>
       </div>
     {/each}

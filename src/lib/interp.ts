@@ -12,6 +12,7 @@ export class Interpolation {
   b: UI_ControlsMap;
 
   private t: number;
+  private maxT: number = 100;
   private _inter: ReturnType<typeof ramp<Vec>> | null = null;
 
   public isRunning: boolean;
@@ -40,14 +41,18 @@ export class Interpolation {
       HERMITE_V(VEC(a.size)),
       [
         [0.0, startVec],
-        [100.0, extractValuesFrom(b)],
+        [this.maxT, extractValuesFrom(b)],
       ],
       { domain: clamp }
     );
   }
 
+  get maxCount() {
+    return this.maxT;
+  }
+  
   update(t: number) {
-    if (this.t >= 100) {
+    if (this.t >= this.maxT) {
       this.isRunning = false;
       return;
     }
@@ -70,8 +75,8 @@ export class Interpolation {
   output() {
     // trash interpolator if t is greater than 100
     if (this.t > 100) {
-      this._inter = null;
       this.isRunning = false;
+      this._inter = null;
     }
 
     if (this.canInterpolate()) {

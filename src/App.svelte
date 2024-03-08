@@ -16,7 +16,7 @@
     ConsoleText,
     LocksMap,
   } from "./stores/stores";
-  import { onlyRegisteredParams } from "./utils/utils";
+  import { onlyRegisteredParams, serialisePresets } from "./utils/utils";
   import { get } from "svelte/store";
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
@@ -37,9 +37,9 @@
 
   watch(CurrentVectorInterp, () => {
     if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp);
-    controlsSnapshot = $UI_Controls;
+
     const sliders: Map<string, UI_Slider> =
-      onlyRegisteredParams(controlsSnapshot);
+      onlyRegisteredParams($UI_Controls);
 
       if (!interpolator?.isRunning) $Accumulator = -1;
 
@@ -65,7 +65,7 @@
       b: $UI_StoredPresets[$CurrentPickedId],
     };
     interpolator = new Interpolation(presetTuple);
-    $Accumulator = 0;
+    $Accumulator = -1;
     interpolator.reset(0);
   }
 
@@ -75,12 +75,14 @@
     controlsSnapshot = $UI_Controls;
     const params = onlyRegisteredParams(controlsSnapshot);
     $UI_StorageFSMs[$CurrentPickedId].storePreset(params);
-    $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $ShowMiniBars = true;
+    $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     // manually get the current state key of each store
+    // and serialise for persistentState storage in the
+    // host plugin environment
     let persisentState = {
       nodes: $UI_StorageFSMs.map((fsm) => get(fsm)),
-      presets: $UI_StoredPresets,
+      presets: serialisePresets($UI_StoredPresets),
     };
     $NativeMessage.setViewState(persisentState);
   }

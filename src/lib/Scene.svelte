@@ -56,13 +56,13 @@
 
   const dispatch = createRawEventDispatcher();
   const { scene } = useThrelte();
-
+$: console.log("Acc", $Accumulator);
   // Framerate dependent counter, made independent from framerate using delta division
-  useTask("deltaCount", (delta) => deltaCount(delta));
+  const { start, stop, started, task: deltaCountTask} = useTask("deltaCountTask", (delta) => deltaCount(delta), {autoStart: false} );
   // super cool Threlte framecount independent counting timer
   function deltaCount(delta: number) {
     let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
-    rate = rate ** 1.6 * 0.1;
+    rate = rate ** 1.6 * 0.25;
     $Accumulator = $Accumulator + delta / rate;
   }
 
@@ -106,9 +106,9 @@
 
   // interpolate preset
   function nodeClick(o: any) {
-    o.eventObject.spin = true;
     $CurrentPickedId = o.instanceId;
     dispatch("interpolatePreset", true);
+    deltaCountTask.start();
   }
 
   function nodeEnter(o: any) {

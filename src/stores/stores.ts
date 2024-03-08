@@ -28,14 +28,12 @@ export const ShowMiniBars: Writable<boolean> = writable(false);
 export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
-export const Accumulator: Writable<number> = writable(0);
-export const Accumulators: Writable<typeof Accumulator[]> = writable([]);
+export const Accumulator: Writable<number> = writable(-1);
 
 //---- Interpolation related stores -------------------
 export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
 
 // ---- native interops -------------------
-
 export const NativeMessage: Writable<NativeMessages> = writable({
   //// Sending messages to the host
 
@@ -269,10 +267,12 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
-      storePreset(p) {
-        console.log("store preset data", p);
-        get(UI_StoredPresets)[index] = new Map(p);
-        return "filled";
+      storePreset(p) {   
+        if (get(UI_StoredPresets)[index]) {
+          get(UI_StoredPresets)[index] = new Map(p);
+          console.log("stored preset data", p);
+          return "filled";
+        }
       },
       clearPreset() {
         get(UI_StoredPresets)[index] = new Map();
@@ -290,8 +290,11 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return get(UI_StoredPresets)[i];
       },
       storePreset(p) {
-        get(UI_StoredPresets)[index] = new Map(p);
-        return "filled";
+        if (get(UI_StoredPresets)[index]) {
+          get(UI_StoredPresets)[index] = new Map(p);
+          console.log("stored preset data", p);
+          return "filled";
+        }
       },
       resetTo(state) {
         return state;
