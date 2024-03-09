@@ -10,3 +10,4 @@
     { "paramId": "mix", "name": "Mix", "min": 0.0, "max": 1.0, "defaultValue": 1.0 }
   ]
 }
+  

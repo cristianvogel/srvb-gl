@@ -16,12 +16,13 @@
     ConsoleText,
     LocksMap,
   } from "./stores/stores";
-  import { onlyRegisteredParams, serialisePresets } from "./utils/utils";
-  import { get } from "svelte/store";
+  import { onlyRegisteredParams } from "./utils/utils";
+
   import { Interpolation } from "./lib/interp";
   import { FORMATTER, type Vec } from "@thi.ng/vectors";
   import type { UI_ControlsMap, UI_Slider } from "../types";
   import PresetSmush from "./data/PresetSmush.svelte";
+  import Logo from "./lib/Logo.svelte";
 
   let interpolator: Interpolation;
   let controlsSnapshot: UI_ControlsMap;
@@ -36,15 +37,17 @@
   });
 
   watch(CurrentVectorInterp, () => {
-    if ($CurrentVectorInterp) $ConsoleText = FORMATTER($CurrentVectorInterp);
+    const sliders: Map<string, UI_Slider> = onlyRegisteredParams($UI_Controls);
 
-    const sliders: Map<string, UI_Slider> =
-      onlyRegisteredParams($UI_Controls);
-
-      if (!interpolator?.isRunning) $Accumulator = -1;
+    // signal when interpolation is over
+    if (!interpolator?.isRunning) {
+      $Accumulator = -1;
+      $ConsoleText = 'Ready.';
+    }
 
     // Main interpolation routine
     if (interpolator?.isRunning) {
+      $ConsoleText = $Accumulator.toFixed(0) + "%";
       sliders.forEach((param: UI_Slider, key: string) => {
         // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";
@@ -79,26 +82,23 @@
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
     $NativeMessage.snapshotToHost();
   }
-
 </script>
 
+<div id="css-renderer-target" />
 <InitialiseNodeStates />
 <PresetSmush bind:smush />
-<Sidebar on:smush = {smush} />
+<Sidebar on:smush={smush} />
+<Logo />
 
-  <div id="css-renderer-target" />
-    <Canvas autoRender={true} size = { { width: 575, height: 575 * 2 } }>
-      <Scene
-        on:newSnapshot={updateStateFSM}
-        on:interpolatePreset={interpolatePreset}
-      />
-      <CssScene />
-    </Canvas>
-    
-
+<Canvas autoRender={true} size={{ width: 575, height: 575 * 2 }}>
+  <Scene
+    on:newSnapshot={updateStateFSM}
+    on:interpolatePreset={interpolatePreset}
+  />
+  <CssScene />
+</Canvas>
 
 <style>
-
   #css-renderer-target {
     left: 0;
     position: absolute;

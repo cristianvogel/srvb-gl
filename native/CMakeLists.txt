@@ -13,12 +13,12 @@ add_subdirectory(juce)
 add_subdirectory(elementary/runtime)
 
 juce_add_plugin(${TARGET_NAME}
-  BUNDLE_ID "audio.elementary.srvb"
-  COMPANY_NAME "Elementary Audio"
-  COMPANY_WEBSITE "https://www.elementary.audio"
-  COMPANY_EMAIL "nick@elementary.audio"
-  PLUGIN_MANUFACTURER_CODE Elem       # A four-character manufacturer id with at least one upper-case character
-  PLUGIN_CODE Srvb                    # A unique four-character plugin id with at least one upper-case character
+  BUNDLE_ID "audio.neverenginelabs.smush"
+  COMPANY_NAME "NeverEngineLabs"
+  COMPANY_WEBSITE "https://neverenginelabs.com"
+  COMPANY_EMAIL "support@neverenginelabs.com"
+  PLUGIN_MANUFACTURER_CODE NVLB       # A four-character manufacturer id with at least one upper-case character
+  PLUGIN_CODE Smsh                    # A unique four-character plugin id with at least one upper-case character
   COPY_PLUGIN_AFTER_BUILD FALSE       # We enable this manually below after adding a copy step
   APP_SANDBOX_ENABLED TRUE
   APP_SANDBOX_OPTIONS com.apple.security.network.client com.apple.security.files.user-selected.read-write
@@ -69,16 +69,16 @@ target_compile_definitions(${TARGET_NAME}
 
 target_link_libraries(${TARGET_NAME}
   PRIVATE
-  juce::juce_audio_basics
+
   juce::juce_audio_devices
   juce::juce_audio_plugin_client
-  juce::juce_audio_processors
-  juce::juce_audio_utils
+
+
   juce::juce_core
   juce::juce_data_structures
-  juce::juce_dsp
+
   juce::juce_events
-  juce::juce_graphics
+
   juce::juce_gui_basics
   juce::juce_gui_extra
   runtime)
