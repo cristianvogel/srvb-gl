@@ -78,6 +78,7 @@ EffectsPluginProcessor::EffectsPluginProcessor()
         // Update our state object with the default parameter value
         state.insert_or_assign(paramId, defValue);
     }
+    state.insert_or_assign("viewState", "");
 }
 
 EffectsPluginProcessor::~EffectsPluginProcessor()
