@@ -21,6 +21,7 @@ import type {
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import type { Vec } from "@thi.ng/vectors";
+import { serialisePresets } from "../utils/utils";
 
 //-------- new Threlte related stores --------------------
 export const RayCastPointerPosition: Writable<Vector2Tuple> = writable([0, 0]);
@@ -37,9 +38,19 @@ export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);
 export const NativeMessage: Writable<NativeMessages> = writable({
   //// Sending messages to the host
 
+  // manually get the current state key of each storage slot
+  // and serialise for persistentState storage in the
+  // host plugin
+  snapshotToHost: function () {
+    let persisentState = {
+      nodes: get(UI_StorageFSMs).map((fsm) => get(fsm)),
+      presets: serialisePresets(get(UI_StoredPresets)),
+    };
+    this.setViewStateInHost(persisentState);
+  },
   // store any persistent UI state in the host
   // serialisation happens here
-  setViewState: function (viewState: any) {
+  setViewStateInHost: function (viewState: any) {
     if (typeof globalThis.__postNativeMessage__ === "function") {
       console.log("sending view state to host", JSON.stringify(viewState));
       globalThis.__postNativeMessage__(
@@ -237,9 +248,9 @@ export function createNodeClassFSM(colors: any, index: number) {
         return "empty";
       },
       fill(eventObject?) {
-       if (eventObject) eventObject.color.set(colors.highlighted);
+        if (eventObject) eventObject.color.set(colors.highlighted);
         return "filled";
-      }
+      },
     },
     filled: {
       assign(c) {
@@ -255,7 +266,7 @@ export function createNodeClassFSM(colors: any, index: number) {
       },
       base() {
         return colors.base;
-      }
+      },
     },
   });
 }
@@ -267,7 +278,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       randomise() {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
-      storePreset(p) {   
+      storePreset(p) {
         if (get(UI_StoredPresets)[index]) {
           get(UI_StoredPresets)[index] = new Map(p);
           console.log("stored preset data", p);
@@ -302,7 +313,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
       clearPreset() {
         get(UI_StoredPresets)[index] = new Map();
         return "empty";
-      }
+      },
     },
   });
 }

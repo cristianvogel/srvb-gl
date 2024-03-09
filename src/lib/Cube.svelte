@@ -8,12 +8,11 @@
   export let nodeIndex: number;
   export let colors: { base: string; highlighted: string };
   export let position: { x: number; y: number; z: number };
-  export let handlers: {
+  export let userEvents: {
     nodeClick: (e: MouseEvent) => void;
     nodeRightClick: (e: MouseEvent) => void;
     nodeEnter: (e: MouseEvent) => void;
     nodeLeave: (e: MouseEvent) => void;
-    nodePointer: (e: MouseEvent) => void;
   };
   export let accumulator: Writable<number> | null; // store
 
@@ -28,16 +27,16 @@
   }}
   on:click={(e) => {
     e.stopPropagation();
-    handlers.nodeClick(e);
+    userEvents.nodeClick(e);
   }}
   on:contextmenu={(e) => {
     // right mouse button stores
     e.stopPropagation();
-    handlers.nodeRightClick(e);
+    userEvents.nodeRightClick(e);
   }}
-  on:pointerenter={handlers.nodeEnter}
-  on:pointerleave={handlers.nodeLeave}
-  on:pointermove={handlers.nodePointer}
+  on:pointerenter={userEvents.nodeEnter}
+  on:pointerleave={userEvents.nodeLeave}
+  on:pointermove={userEvents.nodeEnter}
   color={colors.base}
   position={[position.x, position.y, position.z]}
   rotation={[

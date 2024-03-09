@@ -18,15 +18,30 @@ export function onlyRegisteredParams(
   return onlyRegisteredParams;
 }
 
+
 // Convert an array of UI_ControlsMap to serializable structure (array of objects)
 export function serialisePresets(arrayOfPresets: Map<string, UI_Slider>[]) {
-  arrayOfPresets.map((presetMap) => {
+  const result = arrayOfPresets.map((presetMap) => {
+    if (!presetMap) return {};
     let obj: { [key: string]: UI_Slider } = {};
     presetMap.forEach((settings, key) => {
       obj[key] = settings;
     });
     return obj;
   });
+  return result;
+}
+
+// Convert an array of objects to an array of UI_ControlsMap (Map<string, UI_Slider>)
+export function deserialisePresets(arrayOfObjects: { [key: string]: UI_Slider }[]) {
+  const result = arrayOfObjects.map((presetObj) => {
+    let presetMap = new Map<string, UI_Slider>();
+    for (let key in presetObj) {
+      presetMap.set(key, presetObj[key]);
+    }
+    return presetMap;
+  });
+  return result;
 }
 
 // sample and hold function

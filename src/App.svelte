@@ -77,16 +77,8 @@
     $UI_StorageFSMs[$CurrentPickedId].storePreset(params);
     $ShowMiniBars = true;
     $UI_StorageFSMs = $UI_StorageFSMs; // reactive assignment
-    // manually get the current state key of each store
-    // and serialise for persistentState storage in the
-    // host plugin environment
-    let persisentState = {
-      nodes: $UI_StorageFSMs.map((fsm) => get(fsm)),
-      presets: serialisePresets($UI_StoredPresets),
-    };
-    $NativeMessage.setViewState(persisentState);
+    $NativeMessage.snapshotToHost();
   }
-
 
 </script>
 
@@ -95,7 +87,7 @@
 <Sidebar on:smush = {smush} />
 
   <div id="css-renderer-target" />
-    <Canvas autoRender={true} size = { { width: 575, height: 575 * 1.618 } }>
+    <Canvas autoRender={true} size = { { width: 575, height: 575 * 2 } }>
       <Scene
         on:newSnapshot={updateStateFSM}
         on:interpolatePreset={interpolatePreset}

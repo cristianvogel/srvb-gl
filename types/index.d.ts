@@ -52,7 +52,8 @@ export type ClassFSM = ReturnType<typeof createNodeClassFSM>;
 
 //------------- Native Interops -------------------
 export type NativeMessages = {
-  setViewState(value: any);
+  snapshotToHost();
+  setViewStateInHost(value: any);
   requestParamValueUpdate(paramId: string, value: number): void;
   registerMessagesFromHost(): void;
   requestReady(): void;

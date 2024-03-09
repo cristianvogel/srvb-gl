@@ -22,7 +22,7 @@
     color,
     luminance,
   } from "@thi.ng/color";
-  import { MOUSE, Color as THREE_Color, Vector3 } from "three";
+  import { MOUSE, RGBA_ASTC_5x4_Format, Color as THREE_Color, Vector3 } from "three";
   import {
     InstancedMesh,
     OrbitControls,
@@ -40,26 +40,30 @@
     UI_StorageFSMs,
     CurrentFocusId,
     Accumulator,
+    HostState,
   } from "../stores/stores";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { degToRad } from "three/src/math/MathUtils.js";
   import Cube from "./Cube.svelte";
+  import { tweened } from "svelte/motion";
+  import { cubicIn, cubicInOut, cubicOut } from "svelte/easing";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));
   const colorRotate = 12;
   const elementsPerSide = 8;
   const radius = 0.25 || 0.1618;
-  const layers = [1]; // layers of nodes
   const startingMeshPosition: Vector3 = new Vector3(-0.5, 1.75, -0.25);
 
   const dispatch = createRawEventDispatcher();
   const { scene } = useThrelte();
-$: console.log("Acc", $Accumulator);
+
+   const zoomTransition = tweened( 1, { duration: 1500, easing: cubicOut });
+
   // Framerate dependent counter, made independent from framerate using delta division
-  const { start, stop, started, task: deltaCountTask} = useTask("deltaCountTask", (delta) => deltaCount(delta), {autoStart: false} );
-  // super cool Threlte framecount independent counting timer
+  const { task: deltaCountTask } = useTask("deltaCountTask", (delta) => deltaCount(delta), { autoStart: false});
+  // pulled up the delta count callback, easier to read?
   function deltaCount(delta: number) {
     let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
     rate = rate ** 1.6 * 0.25;
@@ -69,28 +73,31 @@ $: console.log("Acc", $Accumulator);
   // UI paint update when storage state machines update.
   // goes through every mesh in the instanced mesh object
   //
-  // todo: optimise to use a Map accessor or maybe WeakMap ?
-  watch(UI_StorageFSMs, (storage) => {
-    let gridComponents = scene.children.filter(
-      (component) => component.name === "grid"
-    );
-    gridComponents.forEach((gridComponent) => {
-      let cubes = gridComponent.children.filter((cube) => cube.name === "cube");
-      cubes.forEach((cube, i) => {
-        if (get(storage[i]) === "filled") {
-          $UI_ClassFSMs[i].fill(cube);
-        } else {
-          $UI_ClassFSMs[i].empty(cube);
-        }
-      });
+  // todo: optimise to use a Map accessor or a memoized deep equiv
+  // seems to get called way more times than necessary
+  // its a mesh, so should only get called once
+  watch([UI_StorageFSMs], () => {
+    let mesh = scene.children.filter((component) => component.name === "grid");
+    mesh.forEach((instance) => {
+      let cubes = instance.children.filter((cube) => cube.name === "cube");
+        cubes.forEach((cube, i) => {
+          if (get($UI_StorageFSMs[i]) === "filled") {
+            $UI_ClassFSMs[i].fill(cube);
+          } else {
+            $UI_ClassFSMs[i].empty(cube);
+          }
+        });
     });
   });
 
   /* Interactivity
 //////////////// 
 */
+interactivity();
+
+const userEvents = {
   // store a preset
-  function nodeRightClick(o: any) {
+  nodeRightClick: function (o: any) {
     $CurrentPickedId = o.instanceId;
     const nodeId: number = $CurrentPickedId;
     // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
@@ -102,41 +109,37 @@ $: console.log("Acc", $Accumulator);
       parameters: controlsSnapshot,
     };
     dispatch("newSnapshot", preset);
-  }
-
-  // interpolate preset
-  function nodeClick(o: any) {
+  },
+  // start new preset interpolation
+  nodeClick: function (o: any) {
     $CurrentPickedId = o.instanceId;
     dispatch("interpolatePreset", true);
-    deltaCountTask.start();
-  }
-
-  function nodeEnter(o: any) {
+    deltaCountTask.start(); // start the Threlte useTask hook
+  },
+  // show mini chart overlay
+  nodeEnter: function (o: any) {
     $ShowMiniBars = true;
     $CurrentFocusId = o.instanceId;
-  }
-
-  function nodePointer(o: any) {
-    $ShowMiniBars = true;
-    $CurrentFocusId = o.instanceId;
-  }
-
-  function nodeLeave(o: any) {
+  },
+  nodeLeave: function (o: any) {
     $ShowMiniBars = false;
   }
+}
 
-  interactivity();
+//////////////////////////////
 
-  onMount(() => {
-    console.log("Mounted scene.");
+onMount(() => {
+    console.log("Scene ready.");
     scene.background = new THREE_Color(css(rgb("hsl(220 10% 1%)")));
+    zoomTransition.set(3)
   });
+
 </script>
 
 <T.PerspectiveCamera
   makeDefault
   position={[elementsPerSide - 2, elementsPerSide + 4, elementsPerSide]}
-  zoom={3}
+  zoom={$zoomTransition}
 >
   <OrbitControls
     mouseButtons={{ LEFT: 0, RIGHT: MOUSE.ROTATE }}
@@ -166,53 +169,39 @@ $: console.log("Acc", $Accumulator);
 
   {#each Array.from({ length: elementsPerSide }, (_, i) => i) as x}
     {@const offsetter = arrayIterator(fillRange([], 0, -1, 1, 1 / 12))};
-    {#each layers as y}
-      {#each Array.from({ length: elementsPerSide }, (_, i) => i) as z}
-        {@const nodeIndex = y * z + x * elementsPerSide}
-        {@const colorPick = (x + y + z + colorRotate) % palette.length}
-        {@const pos = {
-          x: (x + Math.sin(Number(offsetter.next().value))) / 2,
-          y: y,
-          z: (z - 1) / 2,
+    {@const y = 1}
+    {#each Array.from({ length: elementsPerSide }, (_, i) => i) as z}
+      {@const nodeIndex = y * z + x * elementsPerSide}
+      {@const colorPick = (x + y + z + colorRotate) % palette.length}
+      {@const pos = {
+        x: (x + Math.sin(Number(offsetter.next().value))) / 2,
+        y: y,
+        z: (z - 1) / 2,
+      }}
+      {@const t_paint = color(palette[colorPick])}
+
+      <Text
+        name="label"
+        scale={4 / 6}
+        text={`${nodeIndex}`}
+        characters="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
+        color={palette[colorPick - 2]}
+      />
+
+      <Cube
+        {nodeIndex}
+        colors={{
+          base: palette[colorPick],
+          highlighted: rgbCss( tint( new Vec4(), hsv(css("#c439b8")), (1 - luminance(t_paint)) ** 0.125, 0.25 ) ),
         }}
-        {@const t_paint = color(palette[colorPick])}
-
-        <Text
-          name="label"
-          scale={4 / 6}
-          text={`${nodeIndex}`}
-          characters="0123456789.►-ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
-          position={[pos.x - 0.06, pos.y + 0.1, pos.z + 0.175]}
-          color={palette[colorPick - 2]}
-        />
-
-        <Cube
-          {nodeIndex}
-          colors={{
-            base: palette[colorPick],
-            highlighted: rgbCss(
-              tint(
-                new Vec4(),
-                hsv(css("#c439b8")),
-                (1 - luminance(t_paint)) ** 0.125,
-                0.25
-              )
-            ),
-          }}
-          position={pos}
-          accumulator={$CurrentPickedId === nodeIndex &&
-          get($UI_StorageFSMs[nodeIndex]) === "filled"
-            ? Accumulator
-            : null}
-          handlers={{
-            nodeClick,
-            nodeRightClick,
-            nodeEnter,
-            nodeLeave,
-            nodePointer,
-          }}
-        />
-      {/each}
+        position={pos}
+        accumulator={$CurrentPickedId === nodeIndex &&
+        get($UI_StorageFSMs[nodeIndex]) === "filled"
+          ? Accumulator
+          : null}
+        {userEvents}
+      />
     {/each}
   {/each}
   <PortalTarget id="nodes" />

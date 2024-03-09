@@ -10,19 +10,18 @@
     UI_StoredPresets,
   } from "../stores/stores";
   import type {  NodeLoadState  } from "../../types";
+  import { deserialisePresets } from "../utils/utils";
 
 
   // first, ping the host,
   // then build the array of FSMs with a start state that
   // restores from viewState stored in the Host or initialises
   // to empty states.
-
-  console.log("Registering messages from host...");
+  console.log("Registering host IO...");
   $NativeMessage.requestReady();
   $NativeMessage.registerMessagesFromHost();
 
   let restoredState = false;
-
 
   storageFSMsInit();
   classFSMsInit();
@@ -33,7 +32,7 @@
       const parsedViewState = JSON.parse($HostState.get("viewState")); // needs to be parsed again here
       console.log("Got stored state parsed to ", parsedViewState);
       storageFSMsInit(parsedViewState.nodes);
-      $UI_StoredPresets = parsedViewState.presets;
+      $UI_StoredPresets = deserialisePresets(parsedViewState.presets);
       restoredState = true;
     }
   }
