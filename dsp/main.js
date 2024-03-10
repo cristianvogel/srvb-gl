@@ -1,6 +1,7 @@
 import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
+import fs from './hilbertShift';
 
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
@@ -32,37 +33,37 @@ function shouldRender(prevState, nextState) {
 globalThis.__receiveStateChange__ = (serializedState) => {
   const state = JSON.parse(serializedState);
 
+
   if (shouldRender(prevState, state)) {
 
+ let stats2 = core.render( );
 
-
-
-    let stats = core.render(...srvb({
+  let stats = core.render(...srvb({
       key: 'srvb',
       sampleRate: state.sampleRate,
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
       mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
-      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
+      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, [])
     },
-      ...frequencyShift({
-        key: 'freqshift',
-        sampleRate: state.sampleRate,
-        shift: refs.getOrCreate('shift', 'const', { value: state.shift === 0 ? 0.0001 : state.shift }, []),
-      },
-        el.in({ channel: 0 }), el.in({ channel: 1 })
-      )
+    ...fs({
+      key: 'freqshift',
+      hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
+      shift: refs.getOrCreate('shift', 'const', { value: state.shift }, []),
+    },
+      el.in({ channel: 0 }), el.in({ channel: 1 })
+    )
     )
     );
-
-    console.log(stats);
+    
   } else {
-    console.log('Updating refs');
+
     refs.update('size', { value: state.size });
     refs.update('decay', { value: state.decay });
     refs.update('mod', { value: state.mod });
     refs.update('mix', { value: state.mix });
     refs.update('shift', { value: state.shift });
+    refs.update('hilbert', { value: state.hilbert });
   }
 
   prevState = state;

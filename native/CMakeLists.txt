@@ -75,10 +75,10 @@ target_link_libraries(${TARGET_NAME}
 
 
   juce::juce_core
-  juce::juce_data_structures
+  # juce::juce_data_structures
 
   juce::juce_events
 
-  juce::juce_gui_basics
-  juce::juce_gui_extra
+  # juce::juce_gui_basics
+  # juce::juce_gui_extra
   runtime)

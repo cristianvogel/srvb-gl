@@ -1,8 +1,4 @@
-
-import {
-  writable,
-  type Writable,
-} from "svelte/store";
+import { writable, type Writable } from "svelte/store";
 
 import type {
   ClassFSM,
@@ -18,6 +14,7 @@ import type { Vec } from "@thi.ng/vectors";
 //-----------------  UI defs and parameters -------------------
 
 const NUMBER_NODES = 8 * 8;
+
 export const manifest: LocalManifest = {
   NUMBER_NODES,
   NUMBER_PARAMS: 4,
@@ -26,14 +23,15 @@ export const manifest: LocalManifest = {
     height: 930,
   },
   // ---- Parameters  -------------------
-  // The order of Entries in the parameters object here
-  // should match the order of the parameters in the UI (not the host)
+  // 📍 Hand made version of public/manifest.json --- keep them in sync!
+  // 😎 This will define the display order of the list items in the UI sidebar (not the host)
   parameters: [
     { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 1.0 },
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    { paramId: "shift", name: "Shift", min: 0.0, max: 0.5, defaultValue: 0.0 }
+    { paramId: "hilbert", name: "Hilbert", min: 0.0, max: 1.0, defaultValue: 0.0 },
+    { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0 }
   ],
   viewState: new Array(NUMBER_NODES).fill(0),
 };

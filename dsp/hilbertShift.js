@@ -37,14 +37,9 @@ function hilbert(part, input) {
   }
 }
 
-function shift(input, freqShift) {
+function shift( input, freqShift) { 
   let phasor = el.phasor(
-    el.sm(
-      el.const({
-        key: "freqshift-const",
-        value: freqShift === 0 ? 0.0001 : freqShift,
-      })
-    ),
+    el.sm( freqShift ),
     0
   );
   let sine = el.sin(el.mul(2.0 * Math.PI, phasor));
@@ -58,17 +53,16 @@ function shift(input, freqShift) {
   return f;
 }
 
-export default function frequencyShift(props, xl, xr) {
+export default function fs(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
 
-  const key = props.key;
-  const sampleRate = props.sampleRate;
-  const freqShift = el.sm(props.freqShift);
-  const mix = props.mix;
+  const freqShift = el.sm( el.mul( props.shift, el.const( { value: 443 } ) ) )
+  const mix = el.sm(props.hilbert);
+  
+  const yl = el.mul(1, shift( xl, freqShift));
+  const yr = el.mul(1, shift( xr, freqShift));
 
-  const yl = el.mul(0.5, shift(xl, freqShift));
-  const yr = el.mul(0.5, shift(xr, freqShift));
-
+    // Wet dry mixing
   return [
     el.select(mix, yl, xl),
     el.select(mix, yr, xr),
