@@ -37,9 +37,9 @@ function hilbert(part, input) {
   }
 }
 
-function shift( input, freqShift) { 
+function shift(input, freqShift) {
   let phasor = el.phasor(
-    el.sm( freqShift ),
+    el.sm(freqShift),
     0
   );
   let sine = el.sin(el.mul(2.0 * Math.PI, phasor));
@@ -55,14 +55,23 @@ function shift( input, freqShift) {
 
 export default function fs(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
+  const len = props.size;
+  const sampleRate = props.sampleRate;
+  const ladderFeedback = props.ladder;
+  const tapDelay = el.mul( ladderFeedback, el.sdelay( {size: 44100}, el.tapIn( { name: 'fb' } ) ) )
+  const freqShift = el.sm( el.mul (props.shift, el.const({ value: 443 }) ) )
+  const mix = el.sm(props.hilbert)
 
-  const freqShift = el.sm( el.mul( props.shift, el.const( { value: 443 } ) ) )
-  const mix = el.sm(props.hilbert);
-  
-  const yl = el.mul(1, shift( xl, freqShift));
-  const yr = el.mul(1, shift( xr, freqShift));
+  const tappedMix_l = el.add( tapDelay, xl )
+  const tappedMix_r = el.add( tapDelay, xr )
 
-    // Wet dry mixing
+  const yl = shift( tappedMix_l , freqShift ) ;
+  const yr = shift( tappedMix_r , freqShift ) ;
+
+    // ladder feedback
+ el.tapOut( { name: 'fb' },  el.dcblock( el.add(yl,yr) ) )  
+
+  // Wet dry mixing
   return [
     el.select(mix, yl, xl),
     el.select(mix, yr, xr),

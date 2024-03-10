@@ -31,7 +31,8 @@ export const manifest: LocalManifest = {
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
     { paramId: "hilbert", name: "Hilbert", min: 0.0, max: 1.0, defaultValue: 0.0 },
-    { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0 }
+    { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0 },
+    { paramId: "ladder", name: "Ladder", min: 0.0, max: 1.0, defaultValue: 0.0}
   ],
   viewState: new Array(NUMBER_NODES).fill(0),
 };
