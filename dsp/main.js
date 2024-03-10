@@ -1,7 +1,6 @@
 import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
-import frequencyShift from './hilbertShift';
 
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
@@ -35,13 +34,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
 
   if (shouldRender(prevState, state)) {
 
-    let fs = frequencyShift({
-      key: 'freqshift',
-      sampleRate: state.sampleRate,
-      shift: refs.getOrCreate('shift', 'const', { value: state.shift === 0 ? 0.0001 : state.shift }, []),
-    },
-    el.in({ channel: 0 }), el.in({ channel: 1 })
-    );
+
 
 
     let stats = core.render(...srvb({
@@ -51,10 +44,18 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
       mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
       mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
-    }, fs[0], fs[1]));
+    },
+      ...frequencyShift({
+        key: 'freqshift',
+        sampleRate: state.sampleRate,
+        shift: refs.getOrCreate('shift', 'const', { value: state.shift === 0 ? 0.0001 : state.shift }, []),
+      },
+        el.in({ channel: 0 }), el.in({ channel: 1 })
+      )
+    )
+    );
 
     console.log(stats);
-  
   } else {
     console.log('Updating refs');
     refs.update('size', { value: state.size });
@@ -63,6 +64,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('mix', { value: state.mix });
     refs.update('shift', { value: state.shift });
   }
+
   prevState = state;
 };
 
@@ -92,5 +94,5 @@ globalThis.__receiveHydrationData__ = (data) => {
 
 // Finally, an error callback which just logs back to native
 globalThis.__receiveError__ = (err) => {
-  console.log(`[Elem Error: ${err.name}] ${err.message}`);
+  console.log(`[Error: ${err.name}] ${err.message}`);
 };

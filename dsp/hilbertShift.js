@@ -64,6 +64,7 @@ export default function frequencyShift(props, xl, xr) {
   const key = props.key;
   const sampleRate = props.sampleRate;
   const freqShift = el.sm(props.freqShift);
+  const mix = props.mix;
 
   const yl = el.mul(0.5, shift(xl, freqShift));
   const yr = el.mul(0.5, shift(xr, freqShift));
