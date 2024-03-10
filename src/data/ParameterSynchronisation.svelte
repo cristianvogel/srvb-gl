@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { HostState, UpdateStateFSM } from "../stores/stores";
+  import { HostState } from "../stores/stores";
+  import { UpdateStateFSM } from "../stores/UpdateStateFSM";
   import { UI_Controls } from "../stores/stores";
   import { memoize } from "@threlte/core";
   import { equiv } from "@thi.ng/equiv";
@@ -22,12 +23,10 @@
           );
           commonKeys.forEach((key) => {
             const hostStateValue = $HostState.get(key);
- 
 
-            if (hostStateValue !== undefined ) {
-            
+            if (hostStateValue !== undefined) {
               const sliderSettings = $UI_Controls.get(key);
-              if (sliderSettings ) {
+              if (sliderSettings) {
                 // Update only the control that corresponds to the current key
                 $UI_Controls.set(key, {
                   ...sliderSettings,

@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { UI_Controls, UI_StorageFSMs, UI_ClassFSMs, NativeMessage } from "../stores/stores";
+  import { UI_Controls, UI_StorageFSMs, UI_ClassFSMs } from "../stores/stores";
   import { Smush32 } from "@thi.ng/random";
+    import { NativeMessage } from "../stores/NativeMessage";
+
   import type { StorageFSM, UI_ControlsMap, UI_Slider } from "../../types";
   import { get } from "svelte/store";
 
