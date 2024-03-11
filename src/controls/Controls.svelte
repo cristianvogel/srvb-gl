@@ -106,6 +106,7 @@
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));
     background-color: var(--sidebar-background-color, #222);
+    opacity: 0.9;
     top: var(--sidebar-position-top, 10px);
     right: var(--sidebar-position-right);
     left: var(--sidebar-position-left, 10px);

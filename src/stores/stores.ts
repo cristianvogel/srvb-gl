@@ -17,7 +17,7 @@ const NUMBER_NODES = 8 * 8;
 
 export const manifest: LocalManifest = {
   NUMBER_NODES,
-  NUMBER_PARAMS: 4,
+  NUMBER_PARAMS: 7,
   window: {
     width: 575,
     height: 930,

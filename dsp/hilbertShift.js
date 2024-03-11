@@ -56,7 +56,10 @@ function shift(input, freqShift) {
 export default function fs(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
   const { key, size: len, sampleRate, ladder: ladderFeedback } = props;
-  const tapDelay = el.mul( ladderFeedback, el.sdelay( {key: key, size: 44100}, el.tapIn( { name: 'fb' } ) ) )
+
+
+
+  const tapDelay = el.mul( el.sm(ladderFeedback), el.sdelay( {key: key, size: sampleRate}, el.tapIn( { name: 'fsfb' } ) ) )
   const freqShift = el.sm( el.mul (props.shift, el.const({ value: 443 }) ) )
   const mix = el.sm(props.hilbert)
 
@@ -67,7 +70,7 @@ export default function fs(props, xl, xr) {
   const yr = shift( tappedMix_r , freqShift ) ;
 
     // ladder feedback
- el.tapOut( { name: 'fb' },  el.dcblock( el.add(yl,yr) ) )  
+ el.tapOut( { name: 'fsfb' },  el.dcblock( el.add(yl,yr) ) )  
 
   // Wet dry mixing
   return [

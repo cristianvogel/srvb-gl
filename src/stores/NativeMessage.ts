@@ -54,6 +54,20 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       globalThis.__postNativeMessage__("ready", {});
     }
   },
+
+ requestHotReload: function () {
+  if (process.env.NODE_ENV !== 'production') {
+    import.meta.hot?.on('reload-dsp', () => {
+      console.log('Sending reload dsp message');
+  
+      if (typeof globalThis.__postNativeMessage__ === 'function') {
+        globalThis.__postNativeMessage__('reload');
+      }
+    });
+  }
+},
+
+
   //// Receiving messages from the host
   // register messages sent from the host
   registerMessagesFromHost: function () {
