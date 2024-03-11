@@ -55,27 +55,33 @@ function shift(input, freqShift) {
 
 export default function fs(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
-  const { key, size: len, sampleRate, ladder: ladderFeedback } = props;
+  const { key, size: len, sampleRate, ladder: ladderFeedback, hilbert } = props;
+
+  const effectAmount = el.sm(hilbert)
+
+  const attenuatedFb = el.mul(
+    el.sm(ladderFeedback),
+    el.tapIn({ name: 'fsfb' })
+  );
+
+  const tapDelay = el.sdelay({ key: key, size: sampleRate }, attenuatedFb)
+
+  const freqShift = el.sm(el.mul(props.shift, el.const({ value: 443 })))
 
 
+  const tappedMix_l = el.add(el.mul(effectAmount, tapDelay), xl)
+  const tappedMix_r = el.add(el.mul(effectAmount, tapDelay), xr)
 
-  const tapDelay = el.mul( el.sm(ladderFeedback), el.sdelay( {key: key, size: sampleRate}, el.tapIn( { name: 'fsfb' } ) ) )
-  const freqShift = el.sm( el.mul (props.shift, el.const({ value: 443 }) ) )
-  const mix = el.sm(props.hilbert)
+  const yl = shift(tappedMix_l, freqShift);
+  const yr = shift(tappedMix_r, freqShift);
 
-  const tappedMix_l = el.add( tapDelay, xl )
-  const tappedMix_r = el.add( tapDelay, xr )
-
-  const yl = shift( tappedMix_l , freqShift ) ;
-  const yr = shift( tappedMix_r , freqShift ) ;
-
-    // ladder feedback
- el.tapOut( { name: 'fsfb' },  el.dcblock( el.add(yl,yr) ) )  
+  // ladder feedback
+  const tap = el.tapOut({ name: 'fsfb' }, el.dcblock(el.mul(hilbert, el.sub(yl, yr))))
 
   // Wet dry mixing
   return [
-    el.select(mix, yl, xl),
-    el.select(mix, yr, xr),
+    el.select(hilbert, yl, xl),
+    el.add(el.select(hilbert, yr, xr), tap)
   ];
 }
 

@@ -10,6 +10,6 @@
     { "paramId": "mix", "name": "Mix", "min": 0.0, "max": 1.0, "defaultValue": 1.0 },
     { "paramId": "hilbert", "name": "Hilbert", "min": 0, "max": 1.0, "defaultValue": 0 },
     { "paramId": "shift", "name": "Shift", "min": -1.0, "max": 1.0, "defaultValue": 0 },
-    { "paramId": "ladder", "name": "Ladder", "min": 0.0, "max": 1.0, "defaultValue": 0 }
+    { "paramId": "ladder", "name": "Ladder", "min": -1.0, "max": 1.0, "defaultValue": 0 }
   ]
 }

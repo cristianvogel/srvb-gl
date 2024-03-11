@@ -2,7 +2,7 @@ import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
 import fs from './hilbertShift';
-import { equiv } from '@thi.ng/equiv';
+
 
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
@@ -22,7 +22,7 @@ let refs = new RefMap(core);
 let prevState = null;
 
 function shouldRender(prevState, nextState) {
-  return (prevState === null) || !equiv(prevState.sampleRate, nextState.sampleRate);
+  return (prevState === null) || (nextState ===null) || (prevState.sampleRate !== nextState.sampleRate);
 }
 
 // The important piece: here we register a state change callback with the native
@@ -52,7 +52,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
       shift: refs.getOrCreate('shift', 'const', { value: state.shift }, []),
-      ladder: refs.getOrCreate('ladder', 'const', { value: state.ladder }, []),
+      ladder: refs.getOrCreate('ladder', 'const', { value: state.ladder * (state.hilbert * 0.5) }, []),
     },
       el.in({ channel: 0 }), el.in({ channel: 1 })
     )
@@ -67,7 +67,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('mix', { value: state.mix });
     refs.update('shift', { value: state.shift });
     refs.update('hilbert', { value: state.hilbert });
-    refs.update('ladder', { value: state.ladder });
+    refs.update('ladder', { value: state.ladder * (state.hilbert * 0.5) });
   }
 
   prevState = state;
