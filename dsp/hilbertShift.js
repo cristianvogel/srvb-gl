@@ -59,29 +59,37 @@ export default function fs(props, xl, xr) {
 
   const effectAmount = el.sm(hilbert)
 
-  const attenuatedFb = el.mul(
+  const attenuatedFb_L = el.mul(
     el.sm(ladderFeedback),
-    el.tapIn({ name: 'fsfb' })
+    el.tapIn({ name: 'fsfb-l' })
   );
 
-  const tapDelay = el.sdelay({ key: key, size: sampleRate }, attenuatedFb)
+  const attenuatedFb_R = el.mul(
+    el.sm(ladderFeedback),
+    el.tapIn({ name: 'fsfb-r' }),
+    (2/3)
+  );
+
+  const tapDelay_L = el.delay({ key: key+'_l', size: sampleRate }, len, 0, attenuatedFb_L)
+  const tapDelay_R = el.delay({ key: key+'_r', size: sampleRate }, len, 0, attenuatedFb_R)
 
   const freqShift = el.sm(el.mul(props.shift, el.const({ value: 443 })))
 
 
-  const tappedMix_l = el.add(el.mul(effectAmount, tapDelay), xl)
-  const tappedMix_r = el.add(el.mul(effectAmount, tapDelay), xr)
+  const tappedMix_l = el.add(el.mul(effectAmount, tapDelay_L), xl)
+  const tappedMix_r = el.add(el.mul(effectAmount, tapDelay_R), xr)
 
   const yl = shift(tappedMix_l, freqShift);
   const yr = shift(tappedMix_r, freqShift);
 
   // ladder feedback
-  const tap = el.tapOut({ name: 'fsfb' }, el.dcblock(el.mul(hilbert, el.sub(yl, yr))))
+  const tap_L = el.tapOut({ name: 'fsfb-l' }, el.dcblock(el.mul(hilbert,yl)))
+  const tap_R = el.tapOut({ name: 'fsfb-r' }, el.dcblock(el.mul(hilbert,yr)))
 
   // Wet dry mixing
   return [
-    el.select(hilbert, yl, xl),
-    el.add(el.select(hilbert, yr, xr), tap)
+    el.add(el.select(hilbert, yl, xl), tap_L),
+    el.add(el.select(hilbert, yr, xr), tap_R)
   ];
 }
 
