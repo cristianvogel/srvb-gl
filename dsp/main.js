@@ -2,6 +2,7 @@ import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
 import fs from './hilbertShift';
+import { equiv } from '@thi.ng/equiv';
 
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
@@ -21,7 +22,7 @@ let refs = new RefMap(core);
 let prevState = null;
 
 function shouldRender(prevState, nextState) {
-  return (prevState === null) || (prevState.sampleRate !== nextState.sampleRate);
+  return (prevState === null) || !equiv(prevState.sampleRate, nextState.sampleRate);
 }
 
 // The important piece: here we register a state change callback with the native
@@ -36,7 +37,6 @@ globalThis.__receiveStateChange__ = (serializedState) => {
 
   if (shouldRender(prevState, state)) {
 
- let stats2 = core.render( );
 
   let stats = core.render(...srvb({
       key: 'srvb',

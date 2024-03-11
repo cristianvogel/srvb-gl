@@ -55,10 +55,8 @@ function shift(input, freqShift) {
 
 export default function fs(props, xl, xr) {
   invariant(typeof props === 'object', 'Unexpected props object');
-  const len = props.size;
-  const sampleRate = props.sampleRate;
-  const ladderFeedback = props.ladder;
-  const tapDelay = el.mul( ladderFeedback, el.sdelay( {size: 44100}, el.tapIn( { name: 'fb' } ) ) )
+  const { key, size: len, sampleRate, ladder: ladderFeedback } = props;
+  const tapDelay = el.mul( ladderFeedback, el.sdelay( {key: key, size: 44100}, el.tapIn( { name: 'fb' } ) ) )
   const freqShift = el.sm( el.mul (props.shift, el.const({ value: 443 }) ) )
   const mix = el.sm(props.hilbert)
 
