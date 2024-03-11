@@ -14,6 +14,8 @@ class EffectsPluginProcessor
       private juce::AsyncUpdater
 {
 public:
+    void createParameters(const std::vector<elem::js::Value>&parameters);
+
     //==============================================================================
     EffectsPluginProcessor();
     ~EffectsPluginProcessor() override;
@@ -59,14 +61,32 @@ public:
     void handleAsyncUpdate() override;
 
     //==============================================================================
+
     /** Internal helper for initializing the embedded JS engine. */
     void initJavaScriptEngine();
 
     /** Internal helper for propagating processor state changes. */
     void dispatchStateChange();
+
     void dispatchError(std::string const& name, std::string const& message);
 
 private:
+    std::string VIEW_STATE_PROPERTY =           "viewState";
+
+    std::string MAIN_DSP_JS_FILE =              "dsp.main.js";
+
+    std::string SAMPLE_RATE_PROPERTY =          "sampleRate";
+
+    std::string NATIVE_MESSAGE_FUNCTION_NAME =  "__postNativeMessage__";
+
+    std::string LOG_FUNCTION_NAME =             "__log__";
+
+    std::optional<std::string> loadDspEntryFileContents() const;
+    void sendJavascriptToUI(const std::string& expr) const;
+
+    static std::string serialize(const std::string&function, const elem::js::Object&data, const juce::String&replacementChar = "%");
+    static std::string serialize(const std::string&function, const choc::value::Value&data, const juce::String&replacementChar = "%");
+
     //==============================================================================
     std::atomic<bool> shouldInitialize { false };
     double lastKnownSampleRate = 0;
@@ -79,6 +99,8 @@ private:
 
     std::unique_ptr<elem::Runtime<float>> runtime;
 
+    std::map<std::string, juce::AudioParameterFloat*> parameterMap;
+
     //==============================================================================
     // A simple "dirty list" abstraction here for propagating realtime parameter
     // value changes
@@ -87,9 +109,69 @@ private:
         bool dirty = false;
     };
 
-    std::list<std::atomic<ParameterReadout>> paramReadouts;
+    std::list<std::atomic<ParameterReadout>> parameterReadouts;
     static_assert(std::atomic<ParameterReadout>::is_always_lock_free);
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectsPluginProcessor)
 };
+
+namespace jsFunctions {
+    inline auto consoleLogScript = R"shim(
+(function() {
+  if (typeof globalThis.console === 'undefined') {
+    globalThis.console = {
+      log(...args) {
+        __log__('[embedded:log]', ...args);
+      },
+      warn(...args) {
+          __log__('[embedded:warn]', ...args);
+      },
+      error(...args) {
+          __log__('[embedded:error]', ...args);
+      }
+    };
+  }
+})();
+    )shim";
+
+    inline auto hydrateScript = R"script(
+(function() {
+  if (typeof globalThis.__receiveHydrationData__ !== 'function')
+    return false;
+
+  globalThis.__receiveHydrationData__(%);
+  return true;
+})();
+)script";
+
+    inline auto dispatchScript = R"script(
+(function() {
+  if (typeof globalThis.__receiveStateChange__ !== 'function')
+    return false;
+
+  globalThis.__receiveStateChange__(%);
+  return true;
+})();
+)script";
+
+    inline auto simpleLogScript = R"script(
+(function() {
+  console.log(...JSON.parse(%));
+  return true;
+})();
+)script";
+
+    inline auto errorScript = R"script(
+(function() {
+  if (typeof globalThis.__receiveError__ !== 'function')
+    return false;
+
+  let e = new Error(%);
+  e.name = @;
+
+  globalThis.__receiveError__(e);
+  return true;
+})();
+)script";
+}

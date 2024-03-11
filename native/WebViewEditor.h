@@ -16,21 +16,25 @@ public:
     WebViewEditor(juce::AudioProcessor* proc, juce::File const& assetDirectory, int width, int height);
 
     //==============================================================================
-    choc::ui::WebView* getWebViewPtr();
-
-    //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    //==============================================================================
     std::function<void(choc::value::Value&)> viewStateChanged = [](choc::value::Value&) {};
+    std::function<void(const std::string&, float)> parameterChanged = [](const std::string&, float) {};
+    std::function<void()> reload = []() {};
+    std::function<void()> ready = []() {};
 
+    void executeJavascript(const std::string& script) const;
 private:
-    //==============================================================================
-    choc::value::Value handleSetParameterValueEvent(const choc::value::ValueView& e);
+    std::string POST_NATIVE_MESSAGE = "__postNativeMessage__";
+    std::string READY_EVENT = "ready";
+    std::string RELOAD_EVENT = "reload";
+    std::string SET_PARAMETER_VALUE = "setParameterValue";
+    std::string SET_VIEW_STATE = "setViewState";
 
-    void handleSetViewState(const choc::value::ValueView& valueView);
+    choc::value::Value handleSetParameterValueEvent(const choc::value::ValueView& e) const;
 
-    //==============================================================================
     std::unique_ptr<choc::ui::WebView> webView;
 
 #if JUCE_MAC

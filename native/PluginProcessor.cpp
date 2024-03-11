@@ -43,42 +43,17 @@ EffectsPluginProcessor::EffectsPluginProcessor()
     auto manifestFileContents = manifestFile.loadFileAsString().toStdString();
 #endif
 
-    auto manifest = elem::js::parseJSON(manifestFileContents);
+    const auto manifest = elem::js::parseJSON(manifestFileContents);
 
     if (!manifest.isObject())
         return;
 
-    auto parameters = manifest.getWithDefault("parameters", elem::js::Array());
+    const auto parameters = manifest.getWithDefault("parameters", elem::js::Array());
+    createParameters(parameters);
 
-    for (size_t i = 0; i < parameters.size(); ++i) {
-        auto descrip = parameters[i];
-
-        if (!descrip.isObject())
-            continue;
-
-        auto paramId = descrip.getWithDefault("paramId", elem::js::String("unknown"));
-        auto name = descrip.getWithDefault("name", elem::js::String("Unknown"));
-        auto minValue = descrip.getWithDefault("min", elem::js::Number(0));
-        auto maxValue = descrip.getWithDefault("max", elem::js::Number(1));
-        auto defValue = descrip.getWithDefault("defaultValue", elem::js::Number(0));
-
-        auto* p = new juce::AudioParameterFloat(
-            juce::ParameterID(paramId, 1),
-            name,
-            {static_cast<float>(minValue), static_cast<float>(maxValue)},
-            defValue
-        );
-
-        p->addListener(this);
-        addParameter(p);
-
-        // Push a new ParameterReadout onto the list to represent this parameter
-        paramReadouts.emplace_back(ParameterReadout { static_cast<float>(defValue), false });
-
-        // Update our state object with the default parameter value
-        state.insert_or_assign(paramId, defValue);
-    }
-    state.insert_or_assign("viewState", "");
+    // The view state property has to have some value so that when state is loaded
+    // from the host, the key exists and is populated.
+    state.insert_or_assign(VIEW_STATE_PROPERTY, "");
 }
 
 EffectsPluginProcessor::~EffectsPluginProcessor()
@@ -90,14 +65,67 @@ EffectsPluginProcessor::~EffectsPluginProcessor()
 }
 
 //==============================================================================
+void EffectsPluginProcessor::createParameters(const std::vector<elem::js::Value> &parameters) {
+    for(const auto & parameter : parameters) {
+        if (!parameter.isObject())
+            continue;
+
+        auto paramId =      parameter.getWithDefault("paramId",         elem::js::String("unknown"));
+        auto name =         parameter.getWithDefault("name",            elem::js::String("Unknown"));
+        auto minValue =     parameter.getWithDefault("min",             elem::js::Number(0));
+        auto maxValue =     parameter.getWithDefault("max",             elem::js::Number(1));
+        auto defaultValue = parameter.getWithDefault("defaultValue",    elem::js::Number(0));
+
+        auto* p = new juce::AudioParameterFloat(
+            juce::ParameterID(paramId, 1),
+            name,
+            {static_cast<float>(minValue), static_cast<float>(maxValue)},
+            static_cast<float>(defaultValue)
+        );
+
+        // Keep a map from parameter ID to the juce audio parameter
+        // to avoid looping over the parameter list every time one changes
+        parameterMap.insert({paramId, p});
+
+        p->addListener(this);
+        addParameter(p);
+
+        // Push a new ParameterReadout onto the list to represent this parameter
+        parameterReadouts.emplace_back(ParameterReadout { static_cast<float>(defaultValue), false });
+
+        // Update our state object with the default parameter value
+        state.insert_or_assign(paramId, defaultValue);
+    }
+}
+
 juce::AudioProcessorEditor* EffectsPluginProcessor::createEditor()
 {
-    auto * editor = new WebViewEditor(this, getAssetsDirectory(), 575, 930);
+    auto editor = new WebViewEditor(this, getAssetsDirectory(), 575, 930);
+
+    editor->ready = [this]() {
+        dispatchStateChange();
+    };
+
+    // When setting a parameter value, we simply tell the host. This will in turn fire
+    // a parameterValueChanged event, which will catch and propagate through dispatching
+    // a state change event
+    editor->parameterChanged = [this](const std::string& paramId, float value) {
+        if(parameterMap.count(paramId) > 0) {
+            parameterMap[paramId]->setValueNotifyingHost(value);
+        }
+    };
+
     editor->viewStateChanged = [this](choc::value::Value& v) {
-        DBG("View State Changed " + v.toString());
-        state.insert_or_assign("viewState", v.toString());
+        state.insert_or_assign(VIEW_STATE_PROPERTY, v.toString());
         triggerAsyncUpdate();
     };
+
+#if ELEM_DEV_LOCALHOST
+    editor->reload = [this]() {
+        initJavaScriptEngine();
+        dispatchStateChange();
+    };
+#endif
     return editor;
 }
 
@@ -204,9 +232,9 @@ void EffectsPluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void EffectsPluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
     // Mark the updated parameter value in the dirty list
-    auto& pr = *std::next(paramReadouts.begin(), parameterIndex);
+    auto& readout = *std::next(parameterReadouts.begin(), parameterIndex);
 
-    pr.store({ newValue, true });
+    readout.store({ newValue, true });
     triggerAsyncUpdate();
 }
 
@@ -232,21 +260,21 @@ void EffectsPluginProcessor::handleAsyncUpdate()
     auto& params = getParameters();
 
     // Reduce over the changed parameters to resolve our updated processor state
-    for (size_t i = 0; i < paramReadouts.size(); ++i)
+    for (size_t i = 0; i < parameterReadouts.size(); ++i)
     {
         // We atomically exchange an arbitrary value with a dirty flag false, because
         // we know that the next time we exchange, if the dirty flag is still false, the
         // value can be considered arbitrary. Only when we exchange and find the dirty flag
         // true do we consider the value as having been written by the processor since
         // we last looked.
-        auto& current = *std::next(paramReadouts.begin(), i);
-        auto pr = current.exchange({0.0f, false});
+        auto& current = *std::next(parameterReadouts.begin(), i);
+        const auto pr = current.exchange({0.0f, false});
 
         if (pr.dirty)
         {
-            if (auto* pf = dynamic_cast<juce::AudioParameterFloat*>(params[i])) {
+            if (const auto* pf = dynamic_cast<juce::AudioParameterFloat*>(params[i])) {
                 auto paramId = pf->paramID.toStdString();
-                state.insert_or_assign(paramId, elem::js::Number(pr.value));
+                state.insert_or_assign(paramId, static_cast<elem::js::Number>(pr.value));
             }
         }
     }
@@ -259,9 +287,10 @@ void EffectsPluginProcessor::initJavaScriptEngine()
     jsContext = choc::javascript::createQuickJSContext();
 
     // Install some native interop functions in our JavaScript environment
-    jsContext.registerFunction("__postNativeMessage__", [this](choc::javascript::ArgumentList args) {
-        auto const batch = elem::js::parseJSON(args[0]->toString());
-        auto const rc = runtime->applyInstructions(batch);
+    jsContext.registerFunction(NATIVE_MESSAGE_FUNCTION_NAME, [this](choc::javascript::ArgumentList args)
+    {
+        const auto batch = elem::js::parseJSON(args[0]->toString());
+        const auto rc = runtime->applyInstructions(batch);
 
         if (rc != elem::ReturnCode::Ok()) {
             dispatchError("Runtime Error", elem::ReturnCode::describe(rc));
@@ -270,26 +299,20 @@ void EffectsPluginProcessor::initJavaScriptEngine()
         return choc::value::Value();
     });
 
-    jsContext.registerFunction("__log__", [this](choc::javascript::ArgumentList args) {
-        const auto* kDispatchScript = R"script(
-(function() {
-  console.log(...JSON.parse(%));
-  return true;
-})();
-)script";
+    jsContext.registerFunction(LOG_FUNCTION_NAME, [this](choc::javascript::ArgumentList args) {
 
         // Forward logs to the editor if it's available; then logs show up in one place.
         //
         // If not available, we fall back to std out.
-        if (auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
+        if (const auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
             auto v = choc::value::createEmptyArray();
 
             for (size_t i = 0; i < args.numArgs; ++i) {
                 v.addArrayElement(*args[i]);
             }
 
-            auto expr = juce::String(kDispatchScript).replace("%", elem::js::serialize(choc::json::toString(v))).toStdString();
-            editor->getWebViewPtr()->evaluateJavascript(expr);
+            const auto expr = serialize(jsFunctions::simpleLogScript, v);
+            editor->executeJavascript(expr);
         } else {
             for (size_t i = 0; i < args.numArgs; ++i) {
                 DBG(choc::json::toString(*args[i]));
@@ -300,78 +323,34 @@ void EffectsPluginProcessor::initJavaScriptEngine()
     });
 
     // A simple shim to write various console operations to our native __log__ handler
-    jsContext.evaluate(R"shim(
-(function() {
-  if (typeof globalThis.console === 'undefined') {
-    globalThis.console = {
-      log(...args) {
-        __log__('[embedded:log]', ...args);
-      },
-      warn(...args) {
-          __log__('[embedded:warn]', ...args);
-      },
-      error(...args) {
-          __log__('[embedded:error]', ...args);
-      }
-    };
-  }
-})();
-    )shim");
+    jsContext.evaluate(jsFunctions::consoleLogScript);
 
-    // Load and evaluate our Elementary js main file
-#if ELEM_DEV_LOCALHOST
-    auto dspEntryFile = juce::URL("http://localhost:5173/dsp.main.js");
-    auto dspEntryFileContents = dspEntryFile.readEntireTextStream().toStdString();
-#else
-    auto dspEntryFile = getAssetsDirectory().getChildFile("dsp.main.js");
+    const auto dspEntryFileContents = loadDspEntryFileContents();
 
-    if (!dspEntryFile.existsAsFile())
+    if(dspEntryFileContents.has_value()) {
+        jsContext.evaluate(dspEntryFileContents.value());
+    } else {
         return;
-
-    auto dspEntryFileContents = dspEntryFile.loadFileAsString().toStdString();
-#endif
-    jsContext.evaluate(dspEntryFileContents);
+    }
 
     // Re-hydrate from current state
-    const auto* kHydrateScript = R"script(
-(function() {
-  if (typeof globalThis.__receiveHydrationData__ !== 'function')
-    return false;
-
-  globalThis.__receiveHydrationData__(%);
-  return true;
-})();
-)script";
-
-    auto expr = juce::String(kHydrateScript).replace("%", elem::js::serialize(elem::js::serialize(runtime->snapshot()))).toStdString();
+    const auto expr = serialize(jsFunctions::hydrateScript, runtime->snapshot());
     jsContext.evaluate(expr);
 }
 
 void EffectsPluginProcessor::dispatchStateChange()
 {
-    const auto* kDispatchScript = R"script(
-(function() {
-  if (typeof globalThis.__receiveStateChange__ !== 'function')
-    return false;
-
-  globalThis.__receiveStateChange__(%);
-  return true;
-})();
-)script";
-
     // Need the double serialize here to correctly form the string script. The first
     // serialize produces the payload we want, the second serialize ensures we can replace
     // the % character in the above block and produce a valid javascript expression.
     auto localState = state;
-    localState.insert_or_assign("sampleRate", lastKnownSampleRate);
+    localState.insert_or_assign(SAMPLE_RATE_PROPERTY, lastKnownSampleRate);
 
-    auto expr = juce::String(kDispatchScript).replace("%", elem::js::serialize(elem::js::serialize(localState))).toStdString();
+    const auto expr = serialize(jsFunctions::dispatchScript, localState);
 
     // First we try to dispatch to the UI if it's available, because running this step will
     // just involve placing a message in a queue.
-    if (auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
-        editor->getWebViewPtr()->evaluateJavascript(expr);
-    }
+    sendJavascriptToUI(expr);
 
     // Next we dispatch to the local engine which will evaluate any necessary JavaScript synchronously
     // here on the main thread
@@ -380,51 +359,65 @@ void EffectsPluginProcessor::dispatchStateChange()
 
 void EffectsPluginProcessor::dispatchError(std::string const& name, std::string const& message)
 {
-    const auto* kDispatchScript = R"script(
-(function() {
-  if (typeof globalThis.__receiveError__ !== 'function')
-    return false;
-
-  let e = new Error(%);
-  e.name = @;
-
-  globalThis.__receiveError__(e);
-  return true;
-})();
-)script";
-
     // Need the serialize here to correctly form the string script.
-    auto expr = juce::String(kDispatchScript).replace("@", elem::js::serialize(name)).replace("%", elem::js::serialize(message)).toStdString();
+    const auto expr = juce::String(jsFunctions::errorScript).replace("@", elem::js::serialize(name)).replace("%", elem::js::serialize(message)).toStdString();
 
     // First we try to dispatch to the UI if it's available, because running this step will
     // just involve placing a message in a queue.
-    if (auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
-        editor->getWebViewPtr()->evaluateJavascript(expr);
-    }
+    sendJavascriptToUI(expr);
 
     // Next we dispatch to the local engine which will evaluate any necessary JavaScript synchronously
     // here on the main thread
     jsContext.evaluate(expr);
 }
 
+std::optional<std::string> EffectsPluginProcessor::loadDspEntryFileContents() const {
+    // Load and evaluate our Elementary js main file
+#if ELEM_DEV_LOCALHOST
+    auto dspEntryFile = juce::URL("http://localhost:5173/dsp.main.js");
+    auto dspEntryFileContents = dspEntryFile.readEntireTextStream().toStdString();
+#else
+    auto dspEntryFile = getAssetsDirectory().getChildFile(MAIN_DSP_JS_FILE);
+
+    if (!dspEntryFile.existsAsFile())
+        return std::nullopt;
+
+    auto dspEntryFileContents = dspEntryFile.loadFileAsString().toStdString();
+#endif
+
+    return dspEntryFileContents;
+}
+
+void EffectsPluginProcessor::sendJavascriptToUI(const std::string& expr) const {
+    if (const auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
+        editor->executeJavascript(expr);
+    }
+}
+
+std::string EffectsPluginProcessor::serialize(const std::string &function, const elem::js::Object &data, const juce::String &replacementChar) {
+    return juce::String(function).replace(replacementChar, elem::js::serialize(elem::js::serialize(data))).toStdString();
+}
+
+std::string EffectsPluginProcessor::serialize(const std::string &function, const choc::value::Value &data, const juce::String &replacementChar) {
+    return juce::String(function).replace(replacementChar, choc::json::toString(data)).toStdString();
+}
+
 //==============================================================================
 void EffectsPluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    auto serialized = elem::js::serialize(state);
+    const auto serialized = elem::js::serialize(state);
     destData.replaceAll((void *) serialized.c_str(), serialized.size());
 }
 
 void EffectsPluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     try {
-        auto str = std::string(static_cast<const char*>(data), sizeInBytes);
-        auto parsed = elem::js::parseJSON(str);
+        const auto jsonString = std::string(static_cast<const char*>(data), sizeInBytes);
+        auto parsed = elem::js::parseJSON(jsonString);
         auto o = parsed.getObject();
-        for (auto  &i: o) {
-            std::map<std::string, elem::js::Value>::iterator it;
-            it = state.find(i.first);
-            if (it != state.end()) {
-                state.insert_or_assign(i.first, i.second);
+        for (auto  & [key, value]: o) {
+            if(state.count(key) > 0) {
+                state.insert_or_assign(key, value);
             }
         }
     } catch(...) {
