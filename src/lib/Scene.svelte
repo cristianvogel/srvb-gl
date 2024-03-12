@@ -13,6 +13,7 @@
   } from "@thi.ng/color";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
   import { Vec4 } from "@thi.ng/vectors";
+  import { roundTo } from "@thi.ng/math";
   import {
     T,
     createRawEventDispatcher,
@@ -46,6 +47,7 @@
   } from "../stores/stores";
   import Cube from "./Cube.svelte";
   import RayCastPointer from "./RayCastPointer.svelte";
+  import { NativeMessage } from "../stores/NativeMessage";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));
@@ -112,7 +114,12 @@ const userEvents = {
   nodeClick: function (o: any) {
     $CurrentPickedId = o.instanceId;
     dispatch("interpolatePreset", true);
-    deltaCountTask.start(); // start the Threlte useTask hook
+    // start the Threlte useTask delta-based frame count 
+    deltaCountTask.start(); 
+    // Special case: update the picked box id in the host, needs fancy halfway rounding error custom normalising too
+    const n = $CurrentPickedId
+    const rounded =  n <= 32 ? roundTo( n / 64, (1/63) ) : roundTo( (n+1) / 64, (1/63) );
+    $NativeMessage.requestParamValueUpdate("box", rounded );
   },
   // show mini chart overlay
   nodeEnter: function (o: any) {

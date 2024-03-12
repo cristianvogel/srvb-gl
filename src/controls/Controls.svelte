@@ -26,9 +26,8 @@
     let { value, dataset } = e.target as HTMLInputElement;
     let key = dataset.key! as string;
     const sliderSettings: UI_Slider | undefined = $UI_Controls.get(key);
-    if (sliderSettings)
-      $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
-    $UI_Controls = $UI_Controls;
+    if (sliderSettings?.isRegistered) { $UI_Controls.set(key, { ...sliderSettings, value: Number(value) }) }
+    $UI_Controls = $UI_Controls; // reactive update
     $NativeMessage.requestParamValueUpdate(
       key,
       $UI_Controls.get(key)?.value as number
@@ -67,6 +66,7 @@
 
     {#if $UI_Controls.size}
       {#each $UI_Controls as [paramId, slider], i}
+      {#if paramId !== 'box'}
         {@const { step, min, max, value, group, name } = slider}
         {@const newGroupDiff =
           i < 1
@@ -76,6 +76,7 @@
         {@const lock =
           $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
         {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
+
         {#if newGroupDiff}
           <div class="flex">
             <pre class="text-xs text-[slategrey]">{group}</pre>
@@ -108,6 +109,7 @@
             class="col-start-5 col-span-1 text-xs my-1 text-green-500"
           ></div>
         </label>
+        {/if}
       {/each}
     {/if}
   </div>

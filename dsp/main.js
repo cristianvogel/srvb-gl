@@ -48,10 +48,12 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     ...fs({
       key: 'freqshift',
       sampleRate: state.sampleRate,
+      box:  state.box,
       hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
       shift: refs.getOrCreate('shift', 'const', { value: easeIn3(state.shift) }, []),
       ladder: refs.getOrCreate('ladder', 'const', { value: (state.ladder * 0.6) * state.hilbert  }, []),
       stride: refs.getOrCreate('stride', 'const', { value: state.stride }, []),
+
     },
       el.in({ channel: 0 }), el.in({ channel: 1 })
     )

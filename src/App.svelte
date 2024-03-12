@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Canvas, watch } from "@threlte/core";
   import CssScene from "./CSS2DRenderer/CssScene.svelte";
-  import Sidebar from "./controls/Sidebar.svelte";
+  import Sidebar from "./controls/SidebarDef.svelte";
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
   import Scene from "./lib/Scene.svelte";
   import { NativeMessage } from "./stores/NativeMessage";

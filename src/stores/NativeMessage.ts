@@ -83,7 +83,11 @@ export const NativeMessage: Writable<NativeMessages> = writable({
         // Transpose incoming state which has the form of  <k,v>
         const entries: any = Object.entries(JSON.parse(state));
         // into a TS Map and store in HostState
+       
         HostState.set(new Map(entries));
+        // special case , box id , denormalisation needed.
+        const deNormalised = Math.floor(get(HostState).get('box') * 63);
+        get(HostState).set('box', deNormalised);
       };
       // error handling
       globalThis.__receiveError__ = function (error: any) {

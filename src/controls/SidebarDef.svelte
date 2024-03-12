@@ -5,7 +5,7 @@
   The UI controls we  see in the plugin view, get defined here.
 */
 
-  import Controls from "../controls/Controls.svelte";
+  import Controls from "./Controls.svelte";
   import ParameterLock from "../lib/ParameterLock.svelte";
   import { ParamDefsHost, UI_Controls } from "../stores/stores";
   import type { UI_Slider } from "../../types";
@@ -36,13 +36,27 @@
 
   // add extra params that are ViewState related only, not for controlling audio params the host
   $UI_Controls.set("smooth", {
-    index: 5,
+    index: 7,
     min: 0,
     max: 1,
     value: 0.25,
     step: 0.01,
     isRegistered: false,
     name: "Rate",
+    group: "morphing"
+  });
+
+  $UI_Controls.set("box", {
+    index: 8,
+    min: 0,
+    max: 63,
+    value: 1,
+    step: 1,
+    // special case, it is actually registered, 
+    // but setting this to false means this control 
+    // won't automatically update the host
+    isRegistered: false, 
+    name: "Box",
     group: "morphing"
   });
 </script>
