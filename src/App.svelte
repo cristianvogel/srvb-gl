@@ -47,7 +47,7 @@
 
     // Main interpolation routine
     if (interpolator?.isRunning) {
-      $ConsoleText = $Accumulator.toFixed(0) + "%";
+      $ConsoleText = $Accumulator.toFixed(0) + "%"; 
       sliders.forEach((param: UI_Slider, key: string) => {
         // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";

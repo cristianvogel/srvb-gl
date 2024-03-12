@@ -35,5 +35,6 @@
     transform: scale(var(--minibar-scale, 0.85)) translate(-1rem, -3.5rem);
     position: absolute;
     pointer-events: none;
+    cursor: ne-resize;
   }
 </style>

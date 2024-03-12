@@ -24,6 +24,7 @@ export type UI_Slider = {
   index: number;
   min: number | undefined;
   max: number | undefined;
+  name: string | undefined; // display name only
   value: number | undefined;
   step: number | undefined;
   isRegistered: boolean; // is the parameter registered with the host or does it exist in UI only
@@ -31,7 +32,7 @@ export type UI_Slider = {
 };
 
 // a UI Slider can belong to a group, mainly used for UX purposes in the UI controls panel
-type ControlGroup = "default" | "reverb" | "performance" | "shifter";
+type ControlGroup = "default" | "reverb" | "perform" | "shifter" | "morphing" | "filter" | "presets" ;
 
 export interface UI_Preset {
   index: number;

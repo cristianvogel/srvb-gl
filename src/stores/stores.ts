@@ -30,7 +30,7 @@ export const manifest: LocalManifest = {
     { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 1.0, group: "reverb" },
     { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 , group: "reverb" },
     { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5, group: "reverb" },
-    { paramId: "hilbert", name: "Hilbert", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter" },
+    { paramId: "hilbert", name: "Mix", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter" },
     { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
     { paramId: "ladder", name: "Ladder", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
     // { paramId: "step", name: "Step", min: 0.0, max: 1.0, defaultValue: 0.5},

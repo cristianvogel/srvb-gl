@@ -17,17 +17,23 @@ body {
   color: hsl(220 10% 98%);
   background-color: hsl(220 10% 10%);
   overflow: hidden; /* disable scrolling / rubberband effect on mobile */
+  cursor: ne-resize !important;
 }
 
 :root {
   --sidebar-scale: 0.8;
-  --sidebar-width: 21rem;
-  --slider-thumb-color: rgb(211, 33, 190);
+  --sidebar-width: 20rem;
+  --slider-thumb-color: rgb(196, 39, 118);
   --minibar-scale: 0.8;
-  --sidebar-position-left: 0.1rem;
-  --sidebar-position-top: 3rem;
+
+  --sidebar-position-left: -0.85rem;
+  --sidebar-position-top: -2rem;
+
   --logo-position-left: -1rem;
-  --logo-position-top: 0.5rem;
+  --logo-position-top: 655px;
+
+  --progress-bar-color: var(--slider-thumb-color);
+
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -47,6 +53,7 @@ canvas {
   left: 0;
   top: 0;
   z-index: -1;
+
 }
 
 
@@ -57,5 +64,6 @@ canvas {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  user-select: none;
+  user-select: none !important;
 }
+

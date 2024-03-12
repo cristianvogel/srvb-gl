@@ -37,7 +37,7 @@ function hilbert(part: "real" | "imaginary", input: ElemNode): ElemNode {
 }
 
 function shift(input, freqShift: ElemNode): ElemNode {
-  let phasor = el.phasor(el.sm(freqShift) as any, 0);
+  let phasor = el.phasor( el.sm(freqShift) as any, 0);
   let sine = el.sin(el.mul(2.0 * Math.PI, phasor));
   let cosine = el.cos(el.mul(2.0 * Math.PI, phasor));
 
@@ -61,12 +61,12 @@ export default function fs(props, xl, xr): ElemNode[] {
   
   const attenuatedFb_L = el.mul(
     ladderFeedback,
-    drive(el.lowpass(6000, butterworthQ, el.tapIn({ name: "fsfb-l" })))
+    drive(el.lowpass(8000, butterworthQ, el.tapIn({ name: "fsfb-l" })))
   );
 
   const attenuatedFb_R = el.mul(
     ladderFeedback,
-    drive(el.lowpass(6000, butterworthQ, el.tapIn({ name: "fsfb-r" })))
+    drive(el.lowpass(8000, butterworthQ, el.tapIn({ name: "fsfb-r" })))
   );
 
   const tapDelay_L = el.delay(

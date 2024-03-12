@@ -165,11 +165,11 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
 let count = 0;
 let duration = 3000;
 const prompts = [
-  `Grid with ${manifest.NUMBER_NODES} nodes of ${manifest.NUMBER_PARAMS} parameters.`,
+  `Grid with ${manifest.NUMBER_NODES} cubes for storing ${manifest.NUMBER_PARAMS} parameters.`,
   "Right click cube to store preset.",
-  "Or Smush the grid to randomise.",
   "Left click to morph cube to cube.",
-  "Use smoothing to control speed of morph.",
+  "Use smoothing to control morph rate.",
+  "Smush the grid to randomise.",
   "Ready.",
 ];
 function enterPrompt(this: FSM) {

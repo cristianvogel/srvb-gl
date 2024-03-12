@@ -17,9 +17,10 @@
     value: 0.5,
     step: 0.0001,
     isRegistered: true,
+    name: "example"
   };
 
-  $ParamDefsHost.map(({ paramId, min, max, defaultValue, group }, index) => {
+  $ParamDefsHost.map(({ paramId, min, max, defaultValue, group, name }, index) => {
     slider = {
       index,
       min,
@@ -27,7 +28,8 @@
       value: defaultValue,
       step: 0.0001,
       isRegistered: true,
-      group
+      group, 
+      name
     };
     $UI_Controls.set(paramId, slider);
   });
@@ -40,7 +42,8 @@
     value: 0.25,
     step: 0.01,
     isRegistered: false,
-    group: "performance"
+    name: "Rate",
+    group: "morphing"
   });
 </script>
 

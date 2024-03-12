@@ -34,7 +34,6 @@
       $UI_Controls.get(key)?.value as number
     );
   }
-
 </script>
 
 <ParameterSynchronisation />
@@ -46,7 +45,7 @@
       {foldFocus}
       on:showControls={(e) => (showControls = e.detail)}
     />
-    <SmushButton />
+    <!-- <SmushButton on:smush /> -->
   </div>
 {/if}
 
@@ -64,47 +63,51 @@
       {foldFocus}
       on:showControls={(e) => (showControls = e.detail)}
     />
-    <SmushButton />
+    <SmushButton on:smush />
 
     {#if $UI_Controls.size}
       {#each $UI_Controls as [paramId, slider], i}
-        {@const { step, min, max, value, group } = slider}
-        {@const newGroupDiff = (i < 1) ? true : group !==  ( Array.from( $UI_Controls.values() )[ Math.max(0, i-1) ] ).group }
+        {@const { step, min, max, value, group, name } = slider}
+        {@const newGroupDiff =
+          i < 1
+            ? true
+            : group !==
+              Array.from($UI_Controls.values())[Math.max(0, i - 1)].group}
         {@const lock =
           $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
         {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
         {#if newGroupDiff}
-        <div class="flex">
+          <div class="flex">
             <pre class="text-xs text-[slategrey]">{group}</pre>
             <svg class=" absolute p-4">
               <line x1="0" y1="0" x2="100%" y2="0" stroke="darkslategrey" />
             </svg>
-            </div>  
-            {/if}
-          <label >
-            {paramId}
-            <input
-              id={`slider_${paramId}`}
-              on:input={updateControls}
-              on:wheel={updateControls}
-              data-key={paramId}
-              {value}
-              {min}
-              {max}
-              {step}
-              {disabled}
-              type="range"
-            />
-            <div class="readout">
-              {Number(slider.value).toFixed(2)}
-            </div>
-            <div
-              id="sidebar_range_lock"
-              data-key={"lock_" + paramId}
-              class="col-start-5 col-span-1 text-xs my-1 text-green-500"
-            ></div>
-          </label>
-
+          </div>
+        {/if}
+        <label>
+          {name}
+          <input
+            style="z-index: 100"
+            id={`slider_${paramId}`}
+            on:input={updateControls}
+            on:wheel={updateControls}
+            data-key={paramId}
+            {value}
+            {min}
+            {max}
+            {step}
+            {disabled}
+            type="range"
+          />
+          <div class="readout">
+            {Number(slider.value).toFixed(2)}
+          </div>
+          <div
+            id="sidebar_range_lock"
+            data-key={"lock_" + paramId}
+            class="col-start-5 col-span-1 text-xs my-1 text-green-500"
+          ></div>
+        </label>
       {/each}
     {/if}
   </div>
@@ -148,12 +151,13 @@
 
   .sidebar label {
     display: grid;
-    grid-template-columns: repeat(1, 1fr 2fr 1fr 1fr);
+    grid-template-columns: 1fr 2fr 1fr 1fr;
     gap: 0.25rem;
     align-items: center;
-    justify-items: end;
+    justify-items: left;
     font-weight: 600;
     color: var(--sidebar-label-color, antiquewhite);
+    font-size: 0.85rem;
   }
 
   .sidebar label :disabled {
@@ -165,7 +169,7 @@
     appearance: none;
     background: transparent;
     cursor: pointer;
-    width: 8rem;
+    width: 100%;
     grid-column-start: 2;
     grid-column-end: 4;
     height: 20px;
@@ -201,14 +205,6 @@
   .sidebar .readout {
     font-size: 0.75rem;
     color: lightblue;
-  }
-
-  .sidebar .heading {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--sidebar-heading-color, #fff);
-    text-align: left;
-    margin-bottom: 0.1rem;
-    margin-top: 0.5rem;
+    padding-left: 1rem;
   }
 </style>
