@@ -57,6 +57,7 @@ export type NativeMessages = {
   requestParamValueUpdate(paramId: string, value: number): void;
   registerMessagesFromHost(): void;
   requestReady(): void;
+  bindHotReload(): void;
 };
 
 //------------- Finite States -------------------
