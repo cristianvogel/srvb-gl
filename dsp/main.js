@@ -1,6 +1,7 @@
 import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
+import { easeInOut3 }  from '@thi.ng/math';
 import fs from './hilbertShift';
 
 
@@ -51,7 +52,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       sampleRate: state.sampleRate,
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
-      shift: refs.getOrCreate('shift', 'const', { value: state.shift }, []),
+      shift: refs.getOrCreate('shift', 'const', { value: easeIn3(state.shift) }, []),
       ladder: refs.getOrCreate('ladder', 'const', { value: state.ladder * (state.hilbert * 0.6) }, []),
     },
       el.in({ channel: 0 }), el.in({ channel: 1 })
@@ -65,7 +66,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('decay', { value: state.decay });
     refs.update('mod', { value: state.mod });
     refs.update('mix', { value: state.mix });
-    refs.update('shift', { value: state.shift });
+    refs.update('shift', { value: easeIn3(state.shift) });
     refs.update('hilbert', { value: state.hilbert });
     refs.update('ladder', { value: state.ladder * (state.hilbert * 0.6) });
   }
