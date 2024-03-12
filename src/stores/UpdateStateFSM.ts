@@ -166,8 +166,10 @@ let count = 0;
 let duration = 3000;
 const prompts = [
   `Grid with ${manifest.NUMBER_NODES} nodes of ${manifest.NUMBER_PARAMS} parameters.`,
-  "Store some presets.",
-  "Morph between them.",
+  "Right click cube to store preset.",
+  "Or Smush the grid to randomise.",
+  "Left click to morph cube to cube.",
+  "Use smoothing to control speed of morph.",
   "Ready.",
 ];
 function enterPrompt(this: FSM) {
@@ -185,6 +187,18 @@ export const ConsoleFSM = fsm("start", {
     next: "prompt_3",
   },
   prompt_3: {
+    _enter: enterPrompt,
+    next: "prompt_4",
+  },
+  prompt_4: {
+    _enter: enterPrompt,
+    next: "prompt_5",
+  },
+  prompt_5: {
+    _enter: enterPrompt,
+    next: "prompt_6",
+  },
+  prompt_6: {
     _enter: enterPrompt,
     next: "finish",
   },
