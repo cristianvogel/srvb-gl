@@ -8,8 +8,10 @@ import {
 import type { NativeMessages } from "../../types";
 import { serialisePresets } from "../utils/utils";
 import { UpdateStateFSM } from "./UpdateStateFSM";
+
 import { ConsoleText } from "../stores/stores";
 import { UI_StorageFSMs, UI_StoredPresets, HostState, ErrorStore } from "./stores";
+
 
 // ---- native interops -------------------
 
@@ -29,7 +31,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   // serialisation happens here
   setViewStateInHost: function (viewState: any) {
     if (typeof globalThis.__postNativeMessage__ === "function") {
-      console.log("sending view state to host", JSON.stringify(viewState));
+     // console.log("sending view state to host", JSON.stringify(viewState));
       globalThis.__postNativeMessage__(
         "setViewState",
         JSON.stringify(viewState)
@@ -72,6 +74,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
   //// Receiving messages from the host
   // register messages sent from the host
   registerMessagesFromHost: function () {
+
     if (get(UpdateStateFSM) !== "updatingHost") {
       globalThis.__receiveStateChange__ = function (state: any) {
         // trigger FSM transition
@@ -84,6 +87,7 @@ export const NativeMessage: Writable<NativeMessages> = writable({
       };
       // error handling
       globalThis.__receiveError__ = function (error: any) {
+        ConsoleText.set('Error: ' + error);
         // do something more useful here?
         ConsoleText.set(error);
         ErrorStore.set(error);
