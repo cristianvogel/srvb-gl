@@ -8,7 +8,10 @@ import {
 import type { NativeMessages } from "../../types";
 import { serialisePresets } from "../utils/utils";
 import { UpdateStateFSM } from "./UpdateStateFSM";
-import { UI_StorageFSMs, UI_StoredPresets, HostState, ErrorStore, ConsoleText } from "./stores";
+
+import { ConsoleText } from "../stores/stores";
+import { UI_StorageFSMs, UI_StoredPresets, HostState, ErrorStore } from "./stores";
+
 
 // ---- native interops -------------------
 
@@ -55,16 +58,16 @@ export const NativeMessage: Writable<NativeMessages> = writable({
     }
   },
 
- requestHotReload: function () {
-  if (process.env.NODE_ENV !== 'production') {
-    import.meta.hot?.on('reload-dsp', () => {
-      console.log('Sending reload dsp message');
-  
-      if (typeof globalThis.__postNativeMessage__ === 'function') {
-        globalThis.__postNativeMessage__('reload');
-      }
-    });
-  }
+  bindHotReload: function () {
+    if (process.env.NODE_ENV !== 'production') {
+      import.meta.hot?.on('reload-dsp', () => {
+        console.log('Sending reload dsp message');
+    
+        if (typeof globalThis.__postNativeMessage__ === 'function') {
+          globalThis.__postNativeMessage__('reload');
+        }
+      });
+    }
 },
 
 
@@ -82,11 +85,11 @@ export const NativeMessage: Writable<NativeMessages> = writable({
         // into a TS Map and store in HostState
         HostState.set(new Map(entries));
       };
-
       // error handling
       globalThis.__receiveError__ = function (error: any) {
         ConsoleText.set('Error: ' + error);
         // do something more useful here?
+        ConsoleText.set(error);
         ErrorStore.set(error);
       };
     }

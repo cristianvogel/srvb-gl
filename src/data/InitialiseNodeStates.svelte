@@ -22,7 +22,7 @@
   console.log("Registering host IO...");
   $NativeMessage.requestReady();
   $NativeMessage.registerMessagesFromHost();
-
+  $NativeMessage.bindHotReload();
   let restoredState = false;
 
   storageFSMsInit();

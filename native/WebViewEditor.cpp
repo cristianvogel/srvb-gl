@@ -69,47 +69,38 @@ WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &asset
     viewContainer.setBounds({0, 0, width,  static_cast<int>( width * 1.618 )});
 
     // Install message passing handlers
-    webView->bind("__postNativeMessage__", [=](const choc::value::ValueView &args) -> choc::value::Value
-                  {
+    webView->bind(POST_NATIVE_MESSAGE, [=](const choc::value::ValueView &args) -> choc::value::Value
+    {
         if (args.isArray()) {
-            auto eventName = args[0].getString();
+            const auto eventName = args[0].getString();
 
             // When the webView loads it should send a message telling us that it has established
             // its message-passing hooks and is ready for a state dispatch
-            if (eventName == "ready") {
-                if (auto* ptr = dynamic_cast<EffectsPluginProcessor*>(getAudioProcessor())) {
-                    ptr->dispatchStateChange();
-                }
+            if (eventName == READY_EVENT) {
+                ready();
             }
 
-#if ELEM_DEV_LOCALHOST
-            if (eventName == "reload") {
-                if (auto* ptr = dynamic_cast<EffectsPluginProcessor*>(getAudioProcessor())) {
-                    ptr->initJavaScriptEngine();
-                    ptr->dispatchStateChange();
-                }
+            if (eventName == RELOAD_EVENT) {
+                reload();
             }
-#endif
 
-            if (eventName == "setParameterValue" && args.size() > 1) {
+            if (eventName == SET_PARAMETER_VALUE && args.size() > 1) {
                 return handleSetParameterValueEvent(args[1]);
             }
 
-            if (eventName == "setViewState" && args.size() > 1) {
-                handleSetViewState(args[1]);
+            if (eventName == SET_VIEW_STATE && args.size() > 1) {
+                // Take a copy of the value and pass it to the view state change handler.
+                auto value = choc::value::Value(args[1]);
+                viewStateChanged(value);
             }
         }
 
-        return {}; });
+        return {};
+    });
 
 #if ELEM_DEV_LOCALHOST
     webView->navigate("http://localhost:5173");
 #endif
-}
-
-choc::ui::WebView *WebViewEditor::getWebViewPtr()
-{
-    return webView.get();
 }
 
 void WebViewEditor::paint(juce::Graphics &g)
@@ -121,36 +112,23 @@ void WebViewEditor::resized()
     viewContainer.setBounds(getLocalBounds());
 }
 
-//==============================================================================
-choc::value::Value WebViewEditor::handleSetParameterValueEvent(const choc::value::ValueView &e)
+void WebViewEditor::executeJavascript(const std::string& script) const
 {
-    // When setting a parameter value, we simply tell the host. This will in turn fire
-    // a parameterValueChanged event, which will catch and propagate through dispatching
-    // a state change event
+    webView->evaluateJavascript(script);
+}
+
+//==============================================================================
+choc::value::Value WebViewEditor::handleSetParameterValueEvent(const choc::value::ValueView &e) const
+{
     if (e.isObject() && e.hasObjectMember("paramId") && e.hasObjectMember("value"))
     {
         auto const &paramId = e["paramId"].getString();
         double const v = numberFromChocValue(e["value"]);
 
-        for (auto &p : getAudioProcessor()->getParameters())
-        {
-            if (auto *pf = dynamic_cast<juce::AudioParameterFloat *>(p))
-            {
-                if (pf->paramID.toStdString() == paramId)
-                {
-                    pf->setValueNotifyingHost(static_cast<float>(v));
-                    break;
-                }
-            }
-        }
+        parameterChanged(std::string{paramId}, static_cast<float>(v));
     }
 
     return {};
 }
 
-void WebViewEditor::handleSetViewState(const choc::value::ValueView &valueView)
-{
-    // Take a copy of the value and pass it to the view state change handler.
-    auto value = choc::value::Value(valueView);
-    viewStateChanged(value);
-}
+
