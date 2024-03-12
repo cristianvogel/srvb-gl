@@ -81,8 +81,17 @@ private:
 
     std::string LOG_FUNCTION_NAME =             "__log__";
 
+    // The maximum number of error messages to keep in the queue
+    size_t MAX_ERROR_LOG_QUEUE_SIZE = 200;
+
     std::optional<std::string> loadDspEntryFileContents() const;
-    void sendJavascriptToUI(const std::string& expr) const;
+
+    /**
+     *
+     * @param expr javascript expression to evaluate in the view context
+     * @return true if the view exists, false if not
+     */
+    bool sendJavascriptToUI(const std::string& expr) const;
 
     static std::string serialize(const std::string&function, const elem::js::Object&data, const juce::String&replacementChar = "%");
     static std::string serialize(const std::string&function, const choc::value::Value&data, const juce::String&replacementChar = "%");
@@ -100,6 +109,7 @@ private:
     std::unique_ptr<elem::Runtime<float>> runtime;
 
     std::map<std::string, juce::AudioParameterFloat*> parameterMap;
+    std::queue<std::string> errorLogQueue;
 
     //==============================================================================
     // A simple "dirty list" abstraction here for propagating realtime parameter

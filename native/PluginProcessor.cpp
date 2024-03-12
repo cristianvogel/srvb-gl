@@ -100,9 +100,14 @@ void EffectsPluginProcessor::createParameters(const std::vector<elem::js::Value>
 
 juce::AudioProcessorEditor* EffectsPluginProcessor::createEditor()
 {
-    auto editor = new WebViewEditor(this, getAssetsDirectory(), 575, 930);
+    const auto editor = new WebViewEditor(this, getAssetsDirectory(), 575, 930);
 
     editor->ready = [this]() {
+        // Flush the error log queue to the UI
+        while(!errorLogQueue.empty()) {
+            auto sent = sendJavascriptToUI(errorLogQueue.front());
+            errorLogQueue.pop();
+        }
         dispatchStateChange();
     };
 
@@ -126,6 +131,7 @@ juce::AudioProcessorEditor* EffectsPluginProcessor::createEditor()
         dispatchStateChange();
     };
 #endif
+
     return editor;
 }
 
@@ -354,7 +360,11 @@ void EffectsPluginProcessor::dispatchStateChange()
 
     // Next we dispatch to the local engine which will evaluate any necessary JavaScript synchronously
     // here on the main thread
-    jsContext.evaluate(expr);
+    try {
+        jsContext.evaluate(expr);
+    } catch(std::exception & e) {
+        dispatchError("Error in dsp js", e.what());
+    }
 }
 
 void EffectsPluginProcessor::dispatchError(std::string const& name, std::string const& message)
@@ -364,7 +374,12 @@ void EffectsPluginProcessor::dispatchError(std::string const& name, std::string 
 
     // First we try to dispatch to the UI if it's available, because running this step will
     // just involve placing a message in a queue.
-    sendJavascriptToUI(expr);
+    if(!sendJavascriptToUI(expr)) {
+        if(errorLogQueue.size() == MAX_ERROR_LOG_QUEUE_SIZE) {
+            errorLogQueue.pop();
+        }
+        errorLogQueue.push(expr);
+    }
 
     // Next we dispatch to the local engine which will evaluate any necessary JavaScript synchronously
     // here on the main thread
