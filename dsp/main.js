@@ -1,10 +1,8 @@
 import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
-import { easeInOut3 }  from '@thi.ng/math';
+import { easeIn3 }  from '@thi.ng/math';
 import fs from './hilbertShift';
-
-
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
 //
@@ -45,7 +43,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
       mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
-      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, [])
+      mix: refs.getOrCreate('mix', 'const', { value: easeIn3(state.mix) }, [])
     },
     ...fs({
       key: 'freqshift',
@@ -61,14 +59,14 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     );
     
   } else {
-
+  
     refs.update('size', { value: state.size });
     refs.update('decay', { value: state.decay });
     refs.update('mod', { value: state.mod });
-    refs.update('mix', { value: state.mix });
+    refs.update('mix', { value: easeIn3(state.mix) });
     refs.update('shift', { value: easeIn3(state.shift) });
     refs.update('hilbert', { value: state.hilbert });
-    refs.update('ladder', { value: state.ladder * (state.hilbert * 0.6) });
+    refs.update('ladder', { value: state.ladder * (state.hilbert ) });
   }
 
   prevState = state;

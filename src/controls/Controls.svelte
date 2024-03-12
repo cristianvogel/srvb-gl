@@ -22,8 +22,6 @@
     if (sliderSettings)
       $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
     $UI_Controls = $UI_Controls;
-    // todo: locks
-    //    if (($LocksStore as LocksStoreEntry)[paramId] === 1) return;
     $NativeMessage.requestParamValueUpdate(
       key,
       $UI_Controls.get(key)?.value as number
