@@ -1,28 +1,28 @@
 <script lang="ts">
-  import { Canvas, useTask, watch } from "@threlte/core";
-  import Scene from "./lib/Scene.svelte";
+  import { Canvas, watch } from "@threlte/core";
   import CssScene from "./CSS2DRenderer/CssScene.svelte";
-  import Sidebar from "./lib/Sidebar.svelte";
+  import Sidebar from "./controls/Sidebar.svelte";
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
-  import {
-    CurrentPickedId,
-    UI_StorageFSMs,
-    UI_StoredPresets,
-    UI_Controls,
-    Accumulator,
-    CurrentVectorInterp,
-    ConsoleText,
-    ShowMiniBars,
-  } from "./stores/stores";
+  import Scene from "./lib/Scene.svelte";
   import { NativeMessage } from "./stores/NativeMessage";
   import { LocksMap } from "./stores/UpdateStateFSM";
+  import {
+    Accumulator,
+    ConsoleText,
+    CurrentPickedId,
+    CurrentVectorInterp,
+    ShowMiniBars,
+    UI_Controls,
+    UI_StorageFSMs,
+    UI_StoredPresets,
+  } from "./stores/stores";
   import { onlyRegisteredParams } from "./utils/utils";
 
-  import { Interpolation } from "./lib/interp";
   import { type Vec } from "@thi.ng/vectors";
   import type { UI_ControlsMap, UI_Slider } from "../types";
   import PresetSmush from "./data/PresetSmush.svelte";
   import Logo from "./lib/Logo.svelte";
+  import { Interpolation } from "./lib/interp";
 
   let interpolator: Interpolation;
   let controlsSnapshot: UI_ControlsMap;

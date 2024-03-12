@@ -21,7 +21,7 @@
   }}
   style={`transform: scale(${$slightZoom})`}
 >
-  Smush Fill
+  Fill Boxes With Smush
 </button>
 
 <style>

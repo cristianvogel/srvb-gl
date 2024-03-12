@@ -1,9 +1,18 @@
 <script lang="ts">
+  import { arrayIterator, fillRange } from "@thi.ng/arrays";
+  import {
+    COSINE_GRADIENTS,
+    color,
+    cosineGradient,
+    css,
+    hsv,
+    luminance,
+    rgb,
+    rgbCss,
+    tint,
+  } from "@thi.ng/color";
   import type { CosGradientSpec } from "@thi.ng/color/api/gradients";
-  import type { UI_ControlsMap, UI_Preset } from "../../types";
   import { Vec4 } from "@thi.ng/vectors";
-
-  import RayCastPointer from "./RayCastPointer.svelte";
   import {
     T,
     createRawEventDispatcher,
@@ -12,41 +21,31 @@
     watch,
   } from "@threlte/core";
   import {
-    cosineGradient,
-    COSINE_GRADIENTS,
-    css,
-    rgb,
-    tint,
-    hsv,
-    rgbCss,
-    color,
-    luminance,
-  } from "@thi.ng/color";
-  import { MOUSE, Color as THREE_Color, Vector3 } from "three";
-  import {
     InstancedMesh,
     OrbitControls,
-    interactivity,
+    PortalTarget,
     RoundedBoxGeometry,
     Text,
-    PortalTarget,
+    interactivity,
   } from "@threlte/extras";
-  import { arrayIterator, fillRange } from "@thi.ng/arrays";
+  import { onMount } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { tweened } from "svelte/motion";
+  import { get } from "svelte/store";
+  import { MOUSE, Color as THREE_Color, Vector3 } from "three";
+  import { degToRad } from "three/src/math/MathUtils.js";
+  import type { UI_ControlsMap, UI_Preset } from "../../types";
   import {
-    UI_ClassFSMs,
-    ShowMiniBars,
+    Accumulator,
+    CurrentFocusId,
     CurrentPickedId,
+    ShowMiniBars,
+    UI_ClassFSMs,
     UI_Controls,
     UI_StorageFSMs,
-    CurrentFocusId,
-    Accumulator,
   } from "../stores/stores";
-  import { get } from "svelte/store";
-  import { onMount } from "svelte";
-  import { degToRad } from "three/src/math/MathUtils.js";
   import Cube from "./Cube.svelte";
-  import { tweened } from "svelte/motion";
-  import { cubicOut } from "svelte/easing";
+  import RayCastPointer from "./RayCastPointer.svelte";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));

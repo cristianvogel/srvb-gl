@@ -6,9 +6,9 @@
 */
 
   import Controls from "../controls/Controls.svelte";
-  import ParameterLock from "./ParameterLock.svelte";
+  import ParameterLock from "../lib/ParameterLock.svelte";
   import { ParamDefsHost, UI_Controls } from "../stores/stores";
-  import type { UI_Slider, ControlGroup } from "../../types";
+  import type { UI_Slider } from "../../types";
 
   let slider: UI_Slider = {
     index: 0,

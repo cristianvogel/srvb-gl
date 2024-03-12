@@ -34,6 +34,7 @@
       $UI_Controls.get(key)?.value as number
     );
   }
+
 </script>
 
 <ParameterSynchronisation />
@@ -65,15 +66,22 @@
     />
     <SmushButton />
 
-    <h3 class="heading">Controls</h3>
     {#if $UI_Controls.size}
-    {#key showControls}
       {#each $UI_Controls as [paramId, slider], i}
         {@const { step, min, max, value, group } = slider}
+        {@const newGroupDiff = (i < 1) ? true : group !==  ( Array.from( $UI_Controls.values() )[ Math.max(0, i-1) ] ).group }
         {@const lock =
           $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
         {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
-          <label>
+        {#if newGroupDiff}
+        <div class="flex">
+            <pre class="text-xs text-[slategrey]">{group}</pre>
+            <svg class=" absolute p-4">
+              <line x1="0" y1="0" x2="100%" y2="0" stroke="darkslategrey" />
+            </svg>
+            </div>  
+            {/if}
+          <label >
             {paramId}
             <input
               id={`slider_${paramId}`}
@@ -98,7 +106,6 @@
           </label>
 
       {/each}
-      {/key}
     {/if}
   </div>
 {/if}
@@ -146,6 +153,7 @@
     align-items: center;
     justify-items: end;
     font-weight: 600;
+    color: var(--sidebar-label-color, antiquewhite);
   }
 
   .sidebar label :disabled {
