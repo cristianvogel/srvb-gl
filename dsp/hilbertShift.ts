@@ -58,26 +58,27 @@ export default function fs(props, xl, xr): ElemNode[] {
   const effectAmount = el.sm(hilbert);
 
   const butterworthQ = 1 / Math.sqrt(2);
+  
   const attenuatedFb_L = el.mul(
     ladderFeedback,
-    drive(el.lowpass(12000, butterworthQ, el.tapIn({ name: "fsfb-l" })))
+    drive(el.lowpass(6000, butterworthQ, el.tapIn({ name: "fsfb-l" })))
   );
 
   const attenuatedFb_R = el.mul(
     ladderFeedback,
-    drive(el.lowpass(12001, butterworthQ, el.tapIn({ name: "fsfb-r" })))
+    drive(el.lowpass(6000, butterworthQ, el.tapIn({ name: "fsfb-r" })))
   );
 
   const tapDelay_L = el.delay(
     { key: key + "_l", size: sampleRate },
     el.sm(len),
-    -0.001,
+    0,
     attenuatedFb_L
   );
   const tapDelay_R = el.delay(
     { key: key + "_r", size: sampleRate * (2 / 3) },
     el.sm(len),
-    -0.001,
+    -0.1,
     attenuatedFb_R
   );
 

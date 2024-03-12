@@ -11,22 +11,27 @@ export type HostParameter = {
   min?: number;
   max?: number;
   defaultValue?: number;
+  group?: ControlGroup;
 };
 
 export type UI_ControlsMap = Map<string, UI_Slider>;
 
 export interface UI_ParameterController {
- [paramId: string]:  UI_Slider
-};
+  [paramId: string]: UI_Slider;
+}
 
 export type UI_Slider = {
-  index: number ;
+  index: number;
   min: number | undefined;
   max: number | undefined;
   value: number | undefined;
   step: number | undefined;
   isRegistered: boolean; // is the parameter registered with the host or does it exist in UI only
+  group?: ControlGroup;
 };
+
+// a UI Slider can belong to a group, mainly used for UX purposes in the UI controls panel
+type ControlGroup = "default" | "reverb" | "performance" | "shifter";
 
 export interface UI_Preset {
   index: number;
@@ -34,7 +39,7 @@ export interface UI_Preset {
   color?: UINodeStyle;
   parameters: UI_ControlsMap;
   eventObject?: Object3D;
-};
+}
 
 export type LocalManifest = {
   window: { width: number; height: number };
@@ -45,7 +50,7 @@ export type LocalManifest = {
   viewState?: any;
 };
 
-export type NodeLoadState = 'empty' | 'filled' 
+export type NodeLoadState = "empty" | "filled";
 
 export type StorageFSM = ReturnType<typeof createNodeStateFSM>;
 export type ClassFSM = ReturnType<typeof createNodeClassFSM>;
@@ -61,6 +66,3 @@ export type NativeMessages = {
 };
 
 //------------- Finite States -------------------
-
-
-

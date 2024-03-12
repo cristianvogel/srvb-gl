@@ -51,7 +51,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
       shift: refs.getOrCreate('shift', 'const', { value: easeIn3(state.shift) }, []),
-      ladder: refs.getOrCreate('ladder', 'const', { value: state.ladder * (state.hilbert * 0.6) }, []),
+      ladder: refs.getOrCreate('ladder', 'const', { value: (state.ladder * 0.6) * state.hilbert  }, []),
     },
       el.in({ channel: 0 }), el.in({ channel: 1 })
     )
@@ -66,7 +66,7 @@ globalThis.__receiveStateChange__ = (serializedState) => {
     refs.update('mix', { value: easeIn3(state.mix) });
     refs.update('shift', { value: easeIn3(state.shift) });
     refs.update('hilbert', { value: state.hilbert });
-    refs.update('ladder', { value: state.ladder * (state.hilbert ) });
+    refs.update('ladder', { value:(state.ladder * 0.6) * state.hilbert  });
   }
 
   prevState = state;

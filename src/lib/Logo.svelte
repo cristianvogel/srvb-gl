@@ -84,10 +84,9 @@
 
 <style>
     #logo {
-        
         position: absolute;
-        top: 92%;
-        left: var(--sidebar-position-left, 10px);
+        top: var(--logo-position-top, 10px);
+        left: var(--logo-position-left, 10px);
         pointer-events: none;
         margin-left: 1.5rem;
     }

@@ -1,19 +1,47 @@
 <script lang="ts">
+
+/*
+  This is the Sidebar component. It is the parent of the Controls component.
+  The UI controls we  see in the plugin view, get defined here.
+*/
+
   import Controls from "../controls/Controls.svelte";
   import ParameterLock from "./ParameterLock.svelte";
   import { ParamDefsHost, UI_Controls } from "../stores/stores";
-  import type {  UI_Slider } from "../../types";
+  import type { UI_Slider, ControlGroup } from "../../types";
 
-let slider: UI_Slider = { index:0, min: 0, max: 1, value: 0.5, step: 0.0001 , isRegistered: true};
+  let slider: UI_Slider = {
+    index: 0,
+    min: 0,
+    max: 1,
+    value: 0.5,
+    step: 0.0001,
+    isRegistered: true,
+  };
 
-  $ParamDefsHost.map(({ paramId, min, max, defaultValue }, index) => {
-    slider = { index, min, max, value: defaultValue, step: 0.0001, isRegistered: true };
-  $UI_Controls.set(paramId, slider);
-});
+  $ParamDefsHost.map(({ paramId, min, max, defaultValue, group }, index) => {
+    slider = {
+      index,
+      min,
+      max,
+      value: defaultValue,
+      step: 0.0001,
+      isRegistered: true,
+      group
+    };
+    $UI_Controls.set(paramId, slider);
+  });
 
- // add extra params that are ViewState related only, not for controlling audio params the host
- $UI_Controls.set("smooth", { index: 5, min: 0, max: 1, value: 0.25, step: 0.01, isRegistered: false });
-
+  // add extra params that are ViewState related only, not for controlling audio params the host
+  $UI_Controls.set("smooth", {
+    index: 5,
+    min: 0,
+    max: 1,
+    value: 0.25,
+    step: 0.01,
+    isRegistered: false,
+    group: "performance"
+  });
 </script>
 
 <Controls on:smush />

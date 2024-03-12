@@ -26,13 +26,13 @@ export const manifest: LocalManifest = {
   // 📍 Hand made version of public/manifest.json --- keep them in sync!
   // 😎 This will define the display order of the list items in the UI sidebar (not the host)
   parameters: [
-    { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 1.0 },
-    { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5 },
-    { paramId: "hilbert", name: "Hilbert", min: 0.0, max: 1.0, defaultValue: 0.0 },
-    { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0 },
-    { paramId: "ladder", name: "Ladder", min: 0.0, max: 1.0, defaultValue: 0.0},
+    { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5, group: "reverb" },
+    { paramId: "mix", name: "Mix", min: 0.0, max: 1.0, defaultValue: 1.0, group: "reverb" },
+    { paramId: "mod", name: "Mod", min: 0.0, max: 1.0, defaultValue: 0.5 , group: "reverb" },
+    { paramId: "size", name: "Size", min: 0.0, max: 1.0, defaultValue: 0.5, group: "reverb" },
+    { paramId: "hilbert", name: "Hilbert", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter" },
+    { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
+    { paramId: "ladder", name: "Ladder", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
     // { paramId: "step", name: "Step", min: 0.0, max: 1.0, defaultValue: 0.5},
   ],
   viewState: new Array(NUMBER_NODES).fill(0),

@@ -1,16 +1,23 @@
 <script lang="ts">
-  import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
-  import { ConsoleText, UI_Controls } from "../stores/stores";
-  import { tweened } from "svelte/motion";
-  import { LocksMap } from "../stores/UpdateStateFSM";
+  import { slide } from "svelte/transition";
   import type { UI_Slider } from "../../types";
-  import { createEventDispatcher, onMount } from "svelte";
-  import { cubicIn } from "svelte/easing";
   import { NativeMessage } from "../stores/NativeMessage";
+  import { LocksMap } from "../stores/UpdateStateFSM";
+  import { UI_Controls } from "../stores/stores";
+  import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
+  import ControlsHeader from "./ControlsHeader.svelte";
+  import SmushButton from "./SmushButton.svelte";
+  import { cubicIn } from "svelte/easing";
+  import { tweened } from "svelte/motion";
 
-  const dispatch = createEventDispatcher();
+  let showControls: boolean = true;
 
-  const scale = tweened(1, {
+  const rotate = tweened(0, {
+    duration: 250,
+    easing: cubicIn,
+  });
+
+  const foldFocus = tweened(1, {
     duration: 100,
     easing: cubicIn,
   });
@@ -31,84 +38,98 @@
 
 <ParameterSynchronisation />
 
-<div class="sidebar">
-  <pre>{$ConsoleText}</pre>
-  <button
-    class="button"
-    on:mouseenter={() => scale.set(1.1)}
-    on:mouseleave={() => scale.set(1)}
-    on:click={() => {
-      dispatch("smush");
-      scale.set(0.98);
-    }}
-    style={`transform: scale(${$scale})`}
-  >
-    Smush
-  </button>
-  <h3 class="heading">Controls</h3>
+{#if !showControls}
+  <div class="sidebar-folded">
+    <ControlsHeader
+      {rotate}
+      {foldFocus}
+      on:showControls={(e) => (showControls = e.detail)}
+    />
+    <SmushButton />
+  </div>
+{/if}
 
-  {#if $UI_Controls.size}
-    {#each $UI_Controls as [paramId, slider]}
-      {@const { step, min, max, value } = slider}
-      {@const lock =
-        $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
-      {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
-      <label>
-        {paramId}
-        <input
-          id={`slider_${paramId}`}
-          on:input={updateControls}
-          on:wheel={updateControls}
-          data-key={paramId}
-          {value}
-          {min}
-          {max}
-          {step}
-          {disabled}
-          type="range"
-        />
-        <div class="readout">
-          {Number(slider.value).toFixed(2)}
-        </div>
-        <div
-          id="sidebar_range_lock"
-          data-key={"lock_" + paramId}
-          class="col-start-5 col-span-1 text-xs my-1 text-green-500"
-        ></div>
-      </label>
-    {/each}
-  {/if}
-</div>
+{#if showControls}
+  <div
+    class="sidebar"
+    transition:slide={{
+      delay: 0,
+      duration: 300,
+      axis: "y",
+    }}
+  >
+    <ControlsHeader
+      {rotate}
+      {foldFocus}
+      on:showControls={(e) => (showControls = e.detail)}
+    />
+    <SmushButton />
+
+    <h3 class="heading">Controls</h3>
+    {#if $UI_Controls.size}
+    {#key showControls}
+      {#each $UI_Controls as [paramId, slider], i}
+        {@const { step, min, max, value, group } = slider}
+        {@const lock =
+          $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
+        {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
+          <label>
+            {paramId}
+            <input
+              id={`slider_${paramId}`}
+              on:input={updateControls}
+              on:wheel={updateControls}
+              data-key={paramId}
+              {value}
+              {min}
+              {max}
+              {step}
+              {disabled}
+              type="range"
+            />
+            <div class="readout">
+              {Number(slider.value).toFixed(2)}
+            </div>
+            <div
+              id="sidebar_range_lock"
+              data-key={"lock_" + paramId}
+              class="col-start-5 col-span-1 text-xs my-1 text-green-500"
+            ></div>
+          </label>
+
+      {/each}
+      {/key}
+    {/if}
+  </div>
+{/if}
 
 <style>
-  pre {
-    font-size: 0.75rem;
-    color: chartreuse;
-  }
-
-  .sidebar button {
-    background-color: var(--button-background-color, #142e52);
-    border: none;
-    color: rgb(0, 216, 254);
-    padding: 12px 12px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    border-radius: 15px;
-  }
-
   .sidebar {
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));
     background-color: var(--sidebar-background-color, #222);
     opacity: 0.9;
     top: var(--sidebar-position-top, 10px);
-    right: var(--sidebar-position-right);
+    width: var(--sidebar-width, 21rem);
     left: var(--sidebar-position-left, 10px);
     bottom: var(--sidebar-position-bottom);
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid;
+    border-radius: 8px;
+    border-color: hsl(0 0% 0% / 20%);
+    box-shadow: 1px 1px 10px hsl(0 0% 0% / 10%);
+  }
+
+  .sidebar-folded {
+    position: absolute;
+    transform: scale(var(--sidebar-scale, 0.85));
+    background-color: var(--sidebar-background-color, #222);
+    opacity: 0.9;
+    top: calc(var(--sidebar-position-top, 10px) + 2rem);
+    width: var(--sidebar-width, 21rem);
+    left: var(--sidebar-position-left, 10px);
     display: grid;
     gap: 0.75rem;
     padding: 0.5rem;
