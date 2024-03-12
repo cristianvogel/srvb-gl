@@ -30,8 +30,8 @@ std::string getMimeType(std::string const &ext)
 WebViewEditor::WebViewEditor(juce::AudioProcessor *proc, juce::File const &assetDirectory, int width, int /*height*/)
     : juce::AudioProcessorEditor(proc)
 {
-    setSize(width, width*1.618);
-    setResizable(false, true);
+    setSize(width, width*1.2);
+    setResizable(true, true);
 
     choc::ui::WebView::Options opts;
 

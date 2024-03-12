@@ -22,7 +22,7 @@
     color,
     luminance,
   } from "@thi.ng/color";
-  import { MOUSE, RGBA_ASTC_5x4_Format, Color as THREE_Color, Vector3 } from "three";
+  import { MOUSE, Color as THREE_Color, Vector3 } from "three";
   import {
     InstancedMesh,
     OrbitControls,
@@ -40,14 +40,13 @@
     UI_StorageFSMs,
     CurrentFocusId,
     Accumulator,
-    HostState,
   } from "../stores/stores";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { degToRad } from "three/src/math/MathUtils.js";
   import Cube from "./Cube.svelte";
   import { tweened } from "svelte/motion";
-  import { cubicIn, cubicInOut, cubicOut } from "svelte/easing";
+  import { cubicOut } from "svelte/easing";
 
   const gradient: CosGradientSpec = COSINE_GRADIENTS["green-blue-orange"];
   const palette = cosineGradient(32, gradient).map((c) => css(c));

@@ -1,17 +1,19 @@
 <script lang="ts">
   import {
     HostState,
-    createNodeStateFSM,
-    createNodeClassFSM,
-    manifest,
     UI_StorageFSMs,
     UI_ClassFSMs,
-    NativeMessage,
     UI_StoredPresets,
+    manifest,
   } from "../stores/stores";
-  import type {  NodeLoadState  } from "../../types";
-  import { deserialisePresets } from "../utils/utils";
+  import type { NodeLoadState } from "../../types";
+  import { NativeMessage } from "../stores/NativeMessage";
+  import {
+    createNodeStateFSM,
+    createNodeClassFSM,
+  } from "../stores/UpdateStateFSM";
 
+  import { deserialisePresets } from "../utils/utils";
 
   // first, ping the host,
   // then build the array of FSMs with a start state that
@@ -51,8 +53,9 @@
   function classFSMsInit() {
     for (let i = 0; i < manifest.NUMBER_NODES; i++) {
       $UI_ClassFSMs[i] = createNodeClassFSM(
-        { // these should get replaced with actual colours when the scene loads
-          base: "#000", 
+        {
+          // these should get replaced with actual colours when the scene loads
+          base: "#000",
           highlighted: "#e00",
         },
         i

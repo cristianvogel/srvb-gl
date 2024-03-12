@@ -6,20 +6,20 @@
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
   import {
     CurrentPickedId,
-    NativeMessage,
-    ShowMiniBars,
     UI_StorageFSMs,
     UI_StoredPresets,
     UI_Controls,
     Accumulator,
     CurrentVectorInterp,
     ConsoleText,
-    LocksMap,
+    ShowMiniBars,
   } from "./stores/stores";
+  import { NativeMessage } from "./stores/NativeMessage";
+  import { LocksMap } from "./stores/UpdateStateFSM";
   import { onlyRegisteredParams } from "./utils/utils";
 
   import { Interpolation } from "./lib/interp";
-  import { FORMATTER, type Vec } from "@thi.ng/vectors";
+  import { type Vec } from "@thi.ng/vectors";
   import type { UI_ControlsMap, UI_Slider } from "../types";
   import PresetSmush from "./data/PresetSmush.svelte";
   import Logo from "./lib/Logo.svelte";
@@ -42,7 +42,7 @@
     // signal when interpolation is over
     if (!interpolator?.isRunning) {
       $Accumulator = -1;
-      $ConsoleText = 'Ready.';
+      $ConsoleText = "Ready.";
     }
 
     // Main interpolation routine

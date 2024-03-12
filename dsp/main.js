@@ -1,6 +1,8 @@
 import { Renderer, el } from '@elemaudio/core';
 import { RefMap } from './RefMap';
 import srvb from './srvb';
+import fs from './hilbertShift';
+
 
 
 // This project demonstrates writing a small FDN reverb effect in Elementary.
@@ -20,7 +22,7 @@ let refs = new RefMap(core);
 let prevState = null;
 
 function shouldRender(prevState, nextState) {
-  return (prevState === null) || (prevState.sampleRate !== nextState.sampleRate);
+  return (prevState === null) || (nextState ===null) || (prevState.sampleRate !== nextState.sampleRate);
 }
 
 // The important piece: here we register a state change callback with the native
@@ -32,23 +34,40 @@ function shouldRender(prevState, nextState) {
 globalThis.__receiveStateChange__ = (serializedState) => {
   const state = JSON.parse(serializedState);
 
+
   if (shouldRender(prevState, state)) {
-    let stats = core.render(...srvb({
+
+
+  let stats = core.render(...srvb({
       key: 'srvb',
       sampleRate: state.sampleRate,
       size: refs.getOrCreate('size', 'const', { value: state.size }, []),
       decay: refs.getOrCreate('decay', 'const', { value: state.decay }, []),
       mod: refs.getOrCreate('mod', 'const', { value: state.mod }, []),
-      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, []),
-    }, el.in({ channel: 0 }), el.in({ channel: 1 })));
-
-    console.log(stats);
+      mix: refs.getOrCreate('mix', 'const', { value: state.mix }, [])
+    },
+    ...fs({
+      key: 'freqshift',
+      sampleRate: state.sampleRate,
+      size: refs.getOrCreate('size', 'const', { value: state.size }, []),
+      hilbert: refs.getOrCreate('hilbert', 'const', { value: state.hilbert }, []),
+      shift: refs.getOrCreate('shift', 'const', { value: state.shift }, []),
+      ladder: refs.getOrCreate('ladder', 'const', { value: state.ladder * (state.hilbert * 0.6) }, []),
+    },
+      el.in({ channel: 0 }), el.in({ channel: 1 })
+    )
+    )
+    );
+    
   } else {
-    console.log('Updating refs');
+
     refs.update('size', { value: state.size });
     refs.update('decay', { value: state.decay });
     refs.update('mod', { value: state.mod });
     refs.update('mix', { value: state.mix });
+    refs.update('shift', { value: state.shift });
+    refs.update('hilbert', { value: state.hilbert });
+    refs.update('ladder', { value: state.ladder * (state.hilbert * 0.6) });
   }
 
   prevState = state;

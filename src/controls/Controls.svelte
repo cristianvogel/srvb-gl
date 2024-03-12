@@ -1,16 +1,13 @@
 <script lang="ts">
   import ParameterSynchronisation from "../data/ParameterSynchronisation.svelte";
-  import {
-    ConsoleText,
-    LocksMap,
-    NativeMessage,
-    UI_Controls,
-  } from "../stores/stores";
+  import { ConsoleText, UI_Controls } from "../stores/stores";
   import { tweened } from "svelte/motion";
+  import { LocksMap } from "../stores/UpdateStateFSM";
   import type { UI_Slider } from "../../types";
-
   import { createEventDispatcher, onMount } from "svelte";
   import { cubicIn } from "svelte/easing";
+  import { NativeMessage } from "../stores/NativeMessage";
+
   const dispatch = createEventDispatcher();
 
   const scale = tweened(1, {
@@ -109,6 +106,7 @@
     position: absolute;
     transform: scale(var(--sidebar-scale, 0.85));
     background-color: var(--sidebar-background-color, #222);
+    opacity: 0.9;
     top: var(--sidebar-position-top, 10px);
     right: var(--sidebar-position-right);
     left: var(--sidebar-position-left, 10px);
