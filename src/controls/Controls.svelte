@@ -79,8 +79,8 @@
         {#if newGroupDiff}
           <div class="flex">
             <pre class="text-xs text-[slategrey]">{group}</pre>
-            <svg class=" absolute p-4">
-              <line x1="0" y1="0" x2="100%" y2="0" stroke="darkslategrey" />
+            <svg class="absolute p-4">
+              <line x1="0" y1="0" x2="90%" y2="0" stroke="darkslategrey" />
             </svg>
           </div>
         {/if}

@@ -51,7 +51,7 @@ function shift(input, freqShift: ElemNode): ElemNode {
 
 export default function fs(props, xl, xr): ElemNode[] {
   invariant(typeof props === "object", "Unexpected props object");
-  const { key, size: len, sampleRate, hilbert } = props;
+  const { key, stride, sampleRate, hilbert } = props;
 
   let ladderFeedback = el.sm(props.ladder);
 
@@ -71,14 +71,14 @@ export default function fs(props, xl, xr): ElemNode[] {
 
   const tapDelay_L = el.delay(
     { key: key + "_l", size: sampleRate },
-    el.sm(len),
+    el.sm(stride),
     0,
     attenuatedFb_L
   );
   const tapDelay_R = el.delay(
     { key: key + "_r", size: sampleRate * (2 / 3) },
-    el.sm(len),
-    -0.1,
+    el.sm(stride),
+    0,
     attenuatedFb_R
   );
 
@@ -87,17 +87,17 @@ export default function fs(props, xl, xr): ElemNode[] {
   const tappedMix_l = el.add(el.mul(effectAmount, tapDelay_L), xl);
   const tappedMix_r = el.add(el.mul(effectAmount, tapDelay_R), xr);
 
-  const compress = (i) => el.compress(10, 250, -18, 3, i, i);
+  const compress = (i:ElemNode) =>  el.mul( 1.309, el.compress(30, 160, -18, 3.5, i, i) );
 
   const yl = shift(tappedMix_l, freqShift);
   const yr = shift(tappedMix_r, freqShift);
 
   // ladder feedback
   const tap_L = mute(
-    el.tapOut({ name: "fsfb-l" }, compress(el.dcblock(el.mul(hilbert, yl))))
+    el.tapOut({ name: "fsfb-r" }, compress(el.dcblock(el.mul(hilbert, yl))))
   );
   const tap_R = mute(
-    el.tapOut({ name: "fsfb-r" }, compress(el.dcblock(el.mul(hilbert, yr))))
+    el.tapOut({ name: "fsfb-l" }, compress(el.dcblock(el.mul(hilbert, yr))))
   );
 
   const out_L = el.add(tap_L, yl);

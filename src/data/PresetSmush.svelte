@@ -5,11 +5,12 @@
 
   import type { StorageFSM, UI_ControlsMap, UI_Slider } from "../../types";
   import { get } from "svelte/store";
+  import { onlyRegisteredParams } from "../utils/utils";
 
   export const smush = () => {
     console.log("Smushing presets..");
     const smush = new Smush32(0x909808303);
-    const randomPreset = new Map($UI_Controls);
+    const randomPreset = new Map(onlyRegisteredParams($UI_Controls));
 
     function generateRandomPreset(): UI_ControlsMap {
       randomPreset.forEach((settings, key) => {

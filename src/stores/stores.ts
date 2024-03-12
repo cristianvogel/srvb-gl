@@ -17,7 +17,7 @@ const NUMBER_NODES = 8 * 8;
 
 export const manifest: LocalManifest = {
   NUMBER_NODES,
-  NUMBER_PARAMS: 7,
+  NUMBER_PARAMS: 8,
   window: {
     width: 575,
     height: 930,
@@ -33,7 +33,7 @@ export const manifest: LocalManifest = {
     { paramId: "hilbert", name: "Mix", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter" },
     { paramId: "shift", name: "Shift", min: -1.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
     { paramId: "ladder", name: "Ladder", min: 0.0, max: 1.0, defaultValue: 0.0, group: "shifter"},
-    // { paramId: "step", name: "Step", min: 0.0, max: 1.0, defaultValue: 0.5},
+    { paramId: "stride", name: "Stride", min: 0.0, max: 1.0, defaultValue: 0.25, group: "shifter"},
   ],
   viewState: new Array(NUMBER_NODES).fill(0),
 };
