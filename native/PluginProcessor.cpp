@@ -403,10 +403,12 @@ std::optional<std::string> EffectsPluginProcessor::loadDspEntryFileContents() co
     return dspEntryFileContents;
 }
 
-void EffectsPluginProcessor::sendJavascriptToUI(const std::string& expr) const {
+bool EffectsPluginProcessor::sendJavascriptToUI(const std::string& expr) const {
     if (const auto* editor = static_cast<WebViewEditor*>(getActiveEditor())) {
         editor->executeJavascript(expr);
+        return true;
     }
+    return false;
 }
 
 std::string EffectsPluginProcessor::serialize(const std::string &function, const elem::js::Object &data, const juce::String &replacementChar) {
