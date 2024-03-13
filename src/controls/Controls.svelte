@@ -25,13 +25,18 @@
   function updateControls(e: Event) {
     let { value, dataset } = e.target as HTMLInputElement;
     let key = dataset.key! as string;
-    const sliderSettings: UI_Slider | undefined = $UI_Controls.get(key);
-    if (sliderSettings?.isRegistered) { $UI_Controls.set(key, { ...sliderSettings, value: Number(value) }) }
+    const sliderSettings: UI_Slider  = $UI_Controls.get(key) as UI_Slider;
+    
+    // update the UI sliders in the side bar
+    $UI_Controls.set(key, { ...sliderSettings, value: Number(value) });
     $UI_Controls = $UI_Controls; // reactive update
-    $NativeMessage.requestParamValueUpdate(
-      key,
-      $UI_Controls.get(key)?.value as number
-    );
+    // update dsp side, only if the UI_Slider is registered with host
+    if (sliderSettings?.isRegistered) {
+      $NativeMessage.requestParamValueUpdate(
+        key,
+        $UI_Controls.get(key)?.value as number
+      );
+    }
   }
 </script>
 
@@ -66,49 +71,50 @@
 
     {#if $UI_Controls.size}
       {#each $UI_Controls as [paramId, slider], i}
-      {#if paramId !== 'box'}
-        {@const { step, min, max, value, group, name } = slider}
-        {@const newGroupDiff =
-          i < 1
-            ? true
-            : group !==
-              Array.from($UI_Controls.values())[Math.max(0, i - 1)].group}
-        {@const lock =
-          $LocksMap.has(paramId) && typeof $LocksMap.get(paramId) === "boolean"}
-        {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
+        {#if paramId !== "box"}
+          {@const { step, min, max, value, group, name } = slider}
+          {@const newGroupDiff =
+            i < 1
+              ? true
+              : group !==
+                Array.from($UI_Controls.values())[Math.max(0, i - 1)].group}
+          {@const lock =
+            $LocksMap.has(paramId) &&
+            typeof $LocksMap.get(paramId) === "boolean"}
+          {@const disabled = lock ? Boolean($LocksMap.get(paramId)) : false}
 
-        {#if newGroupDiff}
-          <div class="flex">
-            <pre class="text-xs text-[slategrey]">{group}</pre>
-            <svg class="absolute p-4">
-              <line x1="0" y1="0" x2="90%" y2="0" stroke="darkslategrey" />
-            </svg>
-          </div>
-        {/if}
-        <label>
-          {name}
-          <input
-            style="z-index: 100"
-            id={`slider_${paramId}`}
-            on:input={updateControls}
-            on:wheel={updateControls}
-            data-key={paramId}
-            {value}
-            {min}
-            {max}
-            {step}
-            {disabled}
-            type="range"
-          />
-          <div class="readout">
-            {Number(slider.value).toFixed(2)}
-          </div>
-          <div
-            id="sidebar_range_lock"
-            data-key={"lock_" + paramId}
-            class="col-start-5 col-span-1 text-xs my-1 text-green-500"
-          ></div>
-        </label>
+          {#if newGroupDiff}
+            <div class="flex">
+              <pre class="text-xs text-[slategrey]">{group}</pre>
+              <svg class="absolute p-4">
+                <line x1="0" y1="0" x2="90%" y2="0" stroke="darkslategrey" />
+              </svg>
+            </div>
+          {/if}
+          <label>
+            {name}
+            <input
+              style="z-index: 100"
+              id={`slider_${paramId}`}
+              on:input={updateControls}
+              on:wheel={updateControls}
+              data-key={paramId}
+              {value}
+              {min}
+              {max}
+              {step}
+              {disabled}
+              type="range"
+            />
+            <div class="readout">
+              {Number(slider.value).toFixed(2)}
+            </div>
+            <div
+              id="sidebar_range_lock"
+              data-key={"lock_" + paramId}
+              class="col-start-5 col-span-1 text-xs my-1 text-green-500"
+            ></div>
+          </label>
         {/if}
       {/each}
     {/if}

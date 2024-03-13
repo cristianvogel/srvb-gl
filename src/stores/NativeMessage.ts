@@ -9,7 +9,7 @@ import type { NativeMessages } from "../../types";
 import { serialisePresets } from "../utils/utils";
 import { UpdateStateFSM } from "./UpdateStateFSM";
 
-import { ConsoleText } from "../stores/stores";
+import { ConsoleText, CurrentPickedId } from "../stores/stores";
 import { UI_StorageFSMs, UI_StoredPresets, HostState, ErrorStore } from "./stores";
 
 
@@ -83,12 +83,16 @@ export const NativeMessage: Writable<NativeMessages> = writable({
         // Transpose incoming state which has the form of  <k,v>
         const entries: any = Object.entries(JSON.parse(state));
         // into a TS Map and store in HostState
-       
         HostState.set(new Map(entries));
-        // special case , box id , denormalisation needed.
+        // Special case , box id , denormalisation needed as
+        // the host uses a 0-1 range for the box id
+        // Rewrite received HostState.box value with the
+        // denormalised value.
         const deNormalised = Math.floor(get(HostState).get('box') * 63);
         get(HostState).set('box', deNormalised);
+        CurrentPickedId.set(deNormalised);
       };
+
       // error handling
       globalThis.__receiveError__ = function (error: any) {
         ConsoleText.set('Error: ' + error);

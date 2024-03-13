@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Canvas, watch } from "@threlte/core";
   import CssScene from "./CSS2DRenderer/CssScene.svelte";
-  import Sidebar from "./controls/SidebarDef.svelte";
+  import Sliders from "./controls/Sliders.svelte";
   import InitialiseNodeStates from "./data/InitialiseNodeStates.svelte";
   import Scene from "./lib/Scene.svelte";
   import { NativeMessage } from "./stores/NativeMessage";
@@ -59,7 +59,8 @@
   });
 
   // Call back for interpolating a preset
-  // hooked on UI event
+  // hooked on event that triggers
+  // new interpolation procedure
   function interpolatePreset(e: any) {
     controlsSnapshot = $UI_Controls;
     const params = onlyRegisteredParams(controlsSnapshot);
@@ -73,7 +74,8 @@
   }
 
   // Call back for storage updates
-  // hooked on UI event
+  // hooked on event that saves a preset
+  // into a box
   function updateStateFSM(e: any) {
     controlsSnapshot = $UI_Controls;
     const params = onlyRegisteredParams(controlsSnapshot);
@@ -87,7 +89,7 @@
 <div id="css-renderer-target" />
 <InitialiseNodeStates />
 <PresetSmush bind:smush />
-<Sidebar on:smush={smush} />
+<Sliders on:smush={smush} />
 <Logo />
 
 <Canvas autoRender={true} size={{ width: 575, height: 575 * 2 }}>

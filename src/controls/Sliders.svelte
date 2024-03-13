@@ -33,8 +33,11 @@
     };
     $UI_Controls.set(paramId, slider);
   });
-
-  // add extra params that are ViewState related only, not for controlling audio params the host
+  /**
+  * Below is where to define
+  * extra params that are ViewState related only
+  * not for controlling audio params the host
+  */
   $UI_Controls.set("smooth", {
     index: 7,
     min: 0,
@@ -52,9 +55,9 @@
     max: 63,
     value: 1,
     step: 1,
-    // special case, it is actually registered, 
-    // but setting this to false means this control 
-    // won't automatically update the host
+    // special case: This one is actually registered in host, 
+    // but setting the flag to false means the control 
+    // won't automatically update the host in Controls::updateControls()
     isRegistered: false, 
     name: "Box",
     group: "morphing"
