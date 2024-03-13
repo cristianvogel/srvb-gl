@@ -17,12 +17,11 @@
     UI_StoredPresets,
   } from "./stores/stores";
   import { onlyRegisteredParams } from "./utils/utils";
-
-  import { type Vec } from "@thi.ng/vectors";
   import type { UI_ControlsMap, UI_Slider } from "../types";
   import PresetSmush from "./data/PresetSmush.svelte";
   import Logo from "./lib/Logo.svelte";
   import { Interpolation } from "./lib/interp";
+  import { get } from "svelte/store";
 
   let interpolator: Interpolation;
   let controlsSnapshot: UI_ControlsMap;
@@ -32,22 +31,24 @@
   // 👀
   // Watch single Accumulator used for vector interpolation
   watch(Accumulator, () => {
-    interpolator?.update($Accumulator);
-    CurrentVectorInterp.set(interpolator?.output() as unknown as Vec);
+    interpolator?.update($Accumulator || 0);
+    CurrentVectorInterp?.set( interpolator?.output() ); 
+  });
+
+  watch(CurrentPickedId, (id) => {
+    if (!interpolator) return;
+    if (interpolator?.isRunning()  && validTarget(id) ) {
+      console.log("changing course");
+      interpolator?.changeCourseTowards( validTarget(id) as UI_ControlsMap);
+    }
   });
 
   watch(CurrentVectorInterp, () => {
-    const sliders: Map<string, UI_Slider> = onlyRegisteredParams($UI_Controls);
-
-    // signal when interpolation is over
-    if (!interpolator?.isRunning) {
-      $Accumulator = -1;
-      $ConsoleText = "Ready.";
-    }
-
-    // Main interpolation routine
-    if (interpolator?.isRunning) {
-      $ConsoleText = $Accumulator.toFixed(0) + "%"; 
+    // Main interpolation run routine
+    if (interpolator?.isRunning()) {
+      const sliders: Map<string, UI_Slider> = onlyRegisteredParams($UI_Controls);
+      if ($Accumulator === -1) {$Accumulator = 0}
+      $ConsoleText = $Accumulator.toFixed(0) + "%";
       sliders.forEach((param: UI_Slider, key: string) => {
         // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";
@@ -58,19 +59,34 @@
     }
   });
 
+  function validTarget( id: number ): false | UI_ControlsMap {
+    return get($UI_StorageFSMs[id]) === 'empty' ? false : $UI_StoredPresets[id];
+  }
+
   // Call back for interpolating a preset
   // hooked on event that triggers
   // new interpolation procedure
   function interpolatePreset(e: any) {
+    const noPreset = get($UI_StorageFSMs[$CurrentPickedId]) === 'empty';
+    if (noPreset) {                                               
+      console.warn("No preset to interpolate to.");
+      return;
+    }
+  
     controlsSnapshot = $UI_Controls;
-    const params = onlyRegisteredParams(controlsSnapshot);
-    const presetTuple = {
-      a: params,
-      b: $UI_StoredPresets[$CurrentPickedId],
-    };
-    interpolator = new Interpolation(presetTuple);
-    $Accumulator = -1;
-    interpolator.reset(0);
+
+    if (interpolator === undefined || interpolator.isStopped()) {
+      const params = onlyRegisteredParams(controlsSnapshot);
+      const presetTuple = {
+        a: params,
+        b: $UI_StoredPresets[$CurrentPickedId],
+      };
+      interpolator = new Interpolation(presetTuple);
+      $Accumulator = -1;
+      interpolator.reset(0);
+    } else {
+      interpolator?.changeCourseTowards($UI_StoredPresets[$CurrentPickedId]);
+    }
   }
 
   // Call back for storage updates

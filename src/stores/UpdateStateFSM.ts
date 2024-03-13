@@ -123,11 +123,8 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return Math.random() > 0.5 ? "filled" : "empty";
       },
       storePreset(p) {
-        if (get(UI_StoredPresets)[index]) {
           get(UI_StoredPresets)[index] = new Map(p);
-          console.log("stored preset data", p);
           return "filled";
-        }
       },
       clearPreset() {
         get(UI_StoredPresets)[index] = new Map();
@@ -145,11 +142,8 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
         return get(UI_StoredPresets)[i];
       },
       storePreset(p) {
-        if (get(UI_StoredPresets)[index]) {
           get(UI_StoredPresets)[index] = new Map(p);
-          console.log("stored preset data", p);
           return "filled";
-        }
       },
       resetTo(state) {
         return state;

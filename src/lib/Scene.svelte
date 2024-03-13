@@ -59,15 +59,27 @@
   const dispatch = createRawEventDispatcher();
   const { scene } = useThrelte();
 
-   const zoomTransition = tweened( 1, { duration: 1500, easing: cubicOut });
+  const zoomTransition = tweened(1, { duration: 1500, easing: cubicOut });
 
   // Framerate dependent counter, made independent from framerate using delta division
-  const { task: deltaCountTask } = useTask("deltaCountTask", (delta) => deltaCount(delta), { autoStart: false});
+  const { task: deltaCountTask } = useTask(
+    "deltaCountTask",
+    (delta) => deltaCount(delta),
+    { autoStart: false }
+  );
   // pulled up the delta count callback, easier to read?
   function deltaCount(delta: number) {
-    let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
+    // Accumulator over 100, then set to -1 means that interpolations are over,
+    // so we stop the deltaCountTask
+    if ($Accumulator > 100) {
+      $Accumulator = -1;
+      deltaCountTask.stop();
+      return;
+    } else {
+      let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
     rate = rate ** 1.6 * 0.25;
-    $Accumulator = $Accumulator + delta / rate;
+      $Accumulator = $Accumulator + delta / rate;
+    }
   }
 
   // UI paint update when storage state machines update.
@@ -80,65 +92,65 @@
     let mesh = scene.children.filter((component) => component.name === "grid");
     mesh.forEach((instance) => {
       let cubes = instance.children.filter((cube) => cube.name === "cube");
-        cubes.forEach((cube, i) => {
-          if (get($UI_StorageFSMs[i]) === "filled") {
-            $UI_ClassFSMs[i].fill(cube);
-          } else {
-            $UI_ClassFSMs[i].empty(cube);
-          }
-        });
+      cubes.forEach((cube, i) => {
+        if (get($UI_StorageFSMs[i]) === "filled") {
+          $UI_ClassFSMs[i].fill(cube);
+        } else {
+          $UI_ClassFSMs[i].empty(cube);
+        }
+      });
     });
   });
 
   /* Interactivity
 //////////////// 
 */
-interactivity();
+  interactivity();
 
-const userEvents = {
-  // store a preset
-  nodeRightClick: function (o: any) {
-    $CurrentPickedId = o.instanceId;
-    const nodeId: number = $CurrentPickedId;
-    // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
-    const controlsSnapshot: UI_ControlsMap = $UI_Controls; // deep copy
-    const preset: UI_Preset = {
-      eventObject: o.eventObject,
-      index: nodeId,
-      name: "Node_" + nodeId,
-      parameters: controlsSnapshot,
-    };
-    dispatch("newSnapshot", preset);
-  },
-  // start new preset interpolation
-  nodeClick: function (o: any) {
-    $CurrentPickedId = o.instanceId;
-    dispatch("interpolatePreset", true);
-    // start the Threlte useTask delta-based frame count 
-    deltaCountTask.start(); 
-    // Special case: update the picked box id in the host, needs fancy halfway rounding error custom normalising too
-    const n = $CurrentPickedId
-    const rounded =  n <= 32 ? roundTo( n / 64, (1/63) ) : roundTo( (n+1) / 64, (1/63) );
-    $NativeMessage.requestParamValueUpdate("box", rounded );
-  },
-  // show mini chart overlay
-  nodeEnter: function (o: any) {
-    $ShowMiniBars = true;
-    $CurrentFocusId = o.instanceId;
-  },
-  nodeLeave: function (o: any) {
-    $ShowMiniBars = false;
-  }
-}
+  const userEvents = {
+    // store a preset
+    nodeRightClick: function (o: any) {
+      $CurrentPickedId = o.instanceId;
+      const nodeId: number = $CurrentPickedId;
+      // 🚨📌 nasty bug solved here - the snapshot was being passed by reference!
+      const controlsSnapshot: UI_ControlsMap = $UI_Controls; // deep copy
+      const preset: UI_Preset = {
+        eventObject: o.eventObject,
+        index: nodeId,
+        name: "Node_" + nodeId,
+        parameters: controlsSnapshot,
+      };
+      dispatch("newSnapshot", preset);
+    },
+    // start new preset interpolation
+    nodeClick: function (o: any) {
+      $CurrentPickedId = o.instanceId;
+      dispatch("interpolatePreset", true);
+      // start the Threlte useTask delta-based frame count
+      deltaCountTask.start();
+      // Special case: update the picked box id in the host, needs fancy halfway rounding error custom normalising too
+      const n = $CurrentPickedId;
+      const rounded =
+        n <= 32 ? roundTo(n / 64, 1 / 63) : roundTo((n + 1) / 64, 1 / 63);
+      $NativeMessage.requestParamValueUpdate("box", rounded);
+    },
+    // show mini chart overlay
+    nodeEnter: function (o: any) {
+      $ShowMiniBars = true;
+      $CurrentFocusId = o.instanceId;
+    },
+    nodeLeave: function (o: any) {
+      $ShowMiniBars = false;
+    },
+  };
 
-//////////////////////////////
+  //////////////////////////////
 
-onMount(() => {
+  onMount(() => {
     console.log("Scene ready.");
     scene.background = new THREE_Color(css(rgb("hsl(220 10% 1%)")));
-    zoomTransition.set(3)
+    zoomTransition.set(3);
   });
-
 </script>
 
 <T.PerspectiveCamera
@@ -198,7 +210,14 @@ onMount(() => {
         {nodeIndex}
         colors={{
           base: palette[colorPick],
-          highlighted: rgbCss( tint( new Vec4(), hsv(css("#c439b8")), (1 - luminance(t_paint)) ** 0.125, 0.25 ) ),
+          highlighted: rgbCss(
+            tint(
+              new Vec4(),
+              hsv(css("#c439b8")),
+              (1 - luminance(t_paint)) ** 0.125,
+              0.25
+            )
+          ),
         }}
         position={pos}
         accumulator={$CurrentPickedId === nodeIndex &&

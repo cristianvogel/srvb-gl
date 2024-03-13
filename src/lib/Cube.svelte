@@ -16,8 +16,9 @@
   };
   export let accumulator: Writable<number> | null; // store
 
-  $: normAcc = $accumulator ? $accumulator / 100 : 0;
+  $: normAcc = $accumulator != -1 ? ($accumulator ?? 0) / 100 : 0;
   $: spin = degToRad(360 * easeInOut3(normAcc));
+
 </script>
 
 <Instance

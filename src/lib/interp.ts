@@ -1,6 +1,6 @@
-import { HERMITE_V, VEC, ramp, clamp } from "@thi.ng/ramp";
+import { HERMITE_V, VEC, ramp, clamp, Ramp } from "@thi.ng/ramp";
 import type { UI_ControlsMap } from "../../types/index.js";
-import { CurrentVectorInterp } from "../stores/stores";
+import { Accumulator, CurrentVectorInterp, UI_Controls } from "../stores/stores";
 import { get } from "svelte/store";
 import type { Vec } from "@thi.ng/vectors";
 import { extractValuesFrom } from "../utils/utils.js";
@@ -11,61 +11,87 @@ export class Interpolation {
   a: UI_ControlsMap;
   b: UI_ControlsMap;
 
-  private t: number;
-  private maxT: number = 100;
-  private _inter: ReturnType<typeof ramp<Vec>> | null = null;
-
-  public isRunning: boolean;
+  private _t: number;
+  private __maxT: number = 100;
+  private _inter: Ramp<Vec> | null = null;
+  private _initialVectors: { a: Vec; b: Vec };
+  private _isRunning: boolean;
 
   constructor(presets?: { a: UI_ControlsMap; b: UI_ControlsMap }) {
     this.presets = presets || {
       a: {} as UI_ControlsMap,
       b: {} as UI_ControlsMap,
     };
-    this.isRunning = false;
+    this._isRunning = false;
     this.a = this.presets.a;
     this.b = this.presets.b;
-    this.t = 0;
+    this._initialVectors = {
+      a: extractValuesFrom(this.a),
+      b: extractValuesFrom(this.b),
+    };
+    this._t = 0;
     this._inter = null;
   }
 
-  inter(a: UI_ControlsMap, b: UI_ControlsMap) {
-    let startVec: Vec;
+  vectorInterpolation(a: UI_ControlsMap, b: UI_ControlsMap): Ramp<Vec> {
+    let startVec: Vec = this._initialVectors.a;
 
-    if (get(CurrentVectorInterp)) {
-      startVec = get(CurrentVectorInterp);
+    if (this._isRunning) {
+     this.setStopAtCurrentT( get(CurrentVectorInterp) );
     } else {
-      startVec = extractValuesFrom(a);
+      startVec = this._initialVectors.a;
     }
     return ramp<Vec>(
       HERMITE_V(VEC(a.size)),
       [
-        [0.0, startVec],
-        [this.maxT, extractValuesFrom(b)],
+        [0.0, startVec],                      // source stop
+        [this.__maxT, this._initialVectors.b],// target stop
       ],
       { domain: clamp }
     );
   }
 
-  get maxCount() {
-    return this.maxT;
+  changeCourseTowards(p: UI_ControlsMap) {
+    if (this._inter) {
+      this.setStopAtMaxT( extractValuesFrom(p) ); // validity check and handler?
+    }
   }
-  
+
+  setStopAtMaxT(b: Vec) {
+    if (this._inter) this._inter?.setStopAt(this.__maxT, b);
+  }
+  setStopAtCurrentT(a: Vec) {
+    if (this._inter) this._inter?.setStopAt(this._t, a);
+  }
+
+  get maxCount() {
+    return this.__maxT;
+  }
+
   update(t: number) {
-    if (this.t >= this.maxT) {
-      this.isRunning = false;
+    if (this._t >= this.__maxT) {
+      this._isRunning = false;
       return;
     }
-    this.t = t;
+    this._t = t;
   }
 
   reset(to: number = 0) {
-    this.t = to;
-    this.isRunning = true;
+    this._t = to;
+    this._isRunning = true;
   }
 
   stopInterp() {
-    this.t = 0;
+    this._isRunning = false;
+    this._inter = null;
+    Accumulator.set(-1)
+  }
+
+  isStopped() {
+    return !this._isRunning;
+  }
+  isRunning() {
+    return this._isRunning;
   }
 
   canInterpolate() {
@@ -73,15 +99,16 @@ export class Interpolation {
   }
 
   output() {
+ 
     // trash interpolator if t is greater than 100
-    if (this.t > 100) {
-      this.isRunning = false;
-      this._inter = null;
+    if (this._t > 100) {
+      this.stopInterp();
+      return get(CurrentVectorInterp);
     }
 
     if (this.canInterpolate()) {
-      if (!this._inter) this._inter = this.inter(this.a, this.b);
-      return this._inter?.at(this.t);
+      if (!this._inter) this._inter = this.vectorInterpolation(this.a, this.b);
+      return this._inter?.at(this._t);
     }
 
     return get(CurrentVectorInterp);

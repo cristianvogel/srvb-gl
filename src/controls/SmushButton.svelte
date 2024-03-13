@@ -13,7 +13,7 @@
 
 <button
   class="smush-button"
-  on:mouseenter={() => slightZoom.set(1.1)}
+  on:mouseenter={(e) => slightZoom.set(1.1)}
   on:mouseleave={() => slightZoom.set(1)}
   on:click={() => {
     dispatch("smush");
@@ -21,20 +21,20 @@
   }}
   style={`transform: scale(${$slightZoom})`}
 >
-  Fill Cubes With Smush
+  Smush Fill 
 </button>
 
 <style>
   .smush-button {
-    background-color: var(--button-background-color, #142e52);
+    background-color: var(--button-background-color, #333238);
     border: none;
-    color: rgb(0, 216, 254);
+    color:#c42776;
     padding: 12px 12px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
+    font-size: 18px;
+    margin: 1px 2px;
     cursor: pointer;
     border-radius: 15px;
   }

@@ -7,10 +7,10 @@
   let element
 </script>
 
-<div
+<div class='css2d-object'
   bind:this={element}
   style:pointer-events={pointerEvents ? 'auto' : 'none !important'}
-  style:will-change="transform"
+
 >
   <slot />
 </div>
@@ -28,3 +28,10 @@
     />
   </T>
 {/if}
+
+<style>
+  .css2d-object {
+    position: absolute;
+    will-change: transform;
+  }
+  </style>

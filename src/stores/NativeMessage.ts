@@ -90,7 +90,12 @@ export const NativeMessage: Writable<NativeMessages> = writable({
         // denormalised value.
         const deNormalised = Math.floor(get(HostState).get('box') * 63);
         get(HostState).set('box', deNormalised);
-        CurrentPickedId.set(deNormalised);
+        // UPDATE the current picked id store, to reflect an automated 'box' change
+        // which allows a good host, like Bitwig to modulate box picking
+        // in sync with the host tempo or whatever
+        if (Math.floor(get(CurrentPickedId)) !== deNormalised) { 
+          CurrentPickedId.set(deNormalised);
+        }
       };
 
       // error handling
