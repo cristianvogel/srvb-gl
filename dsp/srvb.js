@@ -67,7 +67,7 @@ function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
       el.mul(
         decay,
         el.smooth(
-          0.105,
+          0.15,
           el.tapIn({ name: `${name}:fdn${i}` }),
         ),
       ),
@@ -87,21 +87,22 @@ function dampFDN(name, sampleRate, size, decay, modDepth, ...ins) {
     // Each delay line here will be ((i + 1) * 17)ms long, multiplied by [1, 4]
     // depending on the size parameter. So at size = 0, delay lines are 17, 34, 51, ...,
     // and at size = 1 we have 68, 136, ..., all in ms here.
-    const delaySize = el.mul(el.add(1.00, el.mul(3, size)), ms2samps((i + 1) * 17));
+    const delaySize = el.mul(  size, ms2samps((i + 1) * 17));
 
+    const vari = el.const( {key: `vari-${i}`, value: (i / 3)  } );
     // Then we modulate the read position for each tap to add some chorus in the
     // delay network.
-    const readPos = modulate(delaySize, el.add(0.1, el.mul(i, md)), ms2samps(2.5));
+    const readPos = modulate( delaySize, el.mul(vari,md), ms2samps( 21 + (i / 3) ) );
 
-    return el.tapOut(
+    return el.dcblock(el.tapOut(
       { name: `${name}:fdn${i}` },
       el.delay(
-        { size: ms2samps(750) },
+        { size: ms2samps(512 + ([-5,3,-7,9][i%4]) ) },
         readPos,
         0,
         mm
       ),
-    );
+    ));
   });
 }
 
@@ -139,10 +140,10 @@ export default function srvb(props, xl, xr) {
 
   const d1 = diffuse(ms2samps(43), ...eight);
   const d2 = diffuse(ms2samps(97), ...d1);
-  const d3 = diffuse(ms2samps(117), ...d2);
+  const d3 = diffuse(ms2samps(137), ...d2);
 
   // Reverb network
-  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.004, modDepth, ...d3)
+  const d4 = dampFDN(`${key}:d4`, sampleRate, size, 0.0042, modDepth, ...d3)
   const r0 = dampFDN(`${key}:r0`, sampleRate, size, decay, modDepth, ...d4);
 
   // Downmix

@@ -120,7 +120,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
   return fsm(initial, {
     empty: {
       randomise() {
-        return Math.random() > 0.5 ? "filled" : "empty";
+        return Math.random() > 0.1 ? "filled" : "empty";
       },
       storePreset(p) {
           get(UI_StoredPresets)[index] = new Map(p);
@@ -136,7 +136,7 @@ export function createNodeStateFSM(initial: NodeLoadState, index: number) {
     },
     filled: {
       randomise() {
-        return Math.random() < 0.5 ? "filled" : "empty";
+        return Math.random() < 0.9 ? "filled" : "empty";
       },
       getPreset(i) {
         return get(UI_StoredPresets)[i];

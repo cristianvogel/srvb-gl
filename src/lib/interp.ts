@@ -1,4 +1,4 @@
-import { HERMITE_V, VEC, ramp, clamp, Ramp } from "@thi.ng/ramp";
+import { HERMITE_V, VEC, ramp, clamp, Ramp, wrapInterval, wrap } from "@thi.ng/ramp";
 import type { UI_ControlsMap } from "../../types/index.js";
 import { Accumulator, CurrentVectorInterp, UI_Controls } from "../stores/stores";
 import { get } from "svelte/store";
@@ -44,8 +44,8 @@ export class Interpolation {
     return ramp<Vec>(
       HERMITE_V(VEC(a.size)),
       [
-        [0.0, startVec],                      // source stop
-        [this.__maxT, this._initialVectors.b],// target stop
+        [0.0, startVec],                        // source stop
+        [this.__maxT, this._initialVectors.b],  // target stop
       ],
       { domain: clamp }
     );
@@ -53,6 +53,7 @@ export class Interpolation {
 
   changeCourseTowards(p: UI_ControlsMap) {
     if (this._inter) {
+      this.setStopAtCurrentT( get(CurrentVectorInterp) );
       this.setStopAtMaxT( extractValuesFrom(p) ); // validity check and handler?
     }
   }

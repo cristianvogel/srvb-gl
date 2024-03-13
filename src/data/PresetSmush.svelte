@@ -14,7 +14,7 @@
 
     function generateRandomPreset(): UI_ControlsMap {
       randomPreset.forEach((settings, key) => {
-        let rnd = smush.minmax(0, 1);
+        let rnd = smush.minmax(  key === 'shift' ? -1 : 0, 1);
         randomPreset.set(key, {
           ...settings,
           value: rnd,
