@@ -15,6 +15,10 @@ import type { Vec } from "@thi.ng/vectors";
 
 const NUMBER_NODES = 8 * 8;
 
+
+
+
+
 export const manifest: LocalManifest = {
   NUMBER_NODES,
   NUMBER_PARAMS: 8,
@@ -23,7 +27,7 @@ export const manifest: LocalManifest = {
     height: 930,
   },
   // ---- Parameters  -------------------
-  // 📍 Hand made version of public/manifest.json --- keep them in sync!
+  // 📍 Extended version of public/manifest.json --- keep them in sync!
   // 😎 This will define the display order of the list items in the UI sidebar (not the host)
   parameters: [
     { paramId: "decay", name: "Decay", min: 0.0, max: 1.0, defaultValue: 0.5, group: "reverb" },

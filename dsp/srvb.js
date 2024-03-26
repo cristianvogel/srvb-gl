@@ -162,5 +162,7 @@ export default function srvb(props, xl, xr) {
   return [
     el.select(mix, yl, xl),
     el.select(mix, yr, xr),
+    xl,
+    xr
   ];
 }

@@ -28,7 +28,7 @@ export type UI_Slider = {
   value: number | undefined;
   step: number | undefined;
   isRegistered: boolean; // is the parameter registered with the host or does it exist in UI only
-  group?: ControlGroup;
+  group: ControlGroup;
 };
 
 // a UI Slider can belong to a group, mainly used for UX purposes in the UI controls panel

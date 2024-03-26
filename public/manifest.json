@@ -14,4 +14,5 @@
     { "paramId": "stride", "name": "Stride", "min": 0.0, "max": 1.0, "defaultValue": 0.25 },
     { "paramId": "box", "name": "Box", "min": 0, "max": 63, "defaultValue": 0}
   ]
+
 }
