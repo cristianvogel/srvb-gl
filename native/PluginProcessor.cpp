@@ -196,7 +196,7 @@ void EffectsPluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
         lastKnownSampleRate = sampleRate;
         lastKnownBlockSize = samplesPerBlock;
 
-        shouldInitialize.store(true);
+        runtimeSwapRequired.store(true);
     }
 
     // Now that the environment is set up, push our current state
@@ -223,7 +223,7 @@ void EffectsPluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     buffer.clear();
 
     // Process the elementary runtime
-    if (runtime != nullptr) {
+    if (runtime != nullptr && !runtimeSwapRequired) {
         runtime->process(
             const_cast<const float**>(scratchBuffer.getArrayOfWritePointers()),
             getTotalNumInputChannels(),
@@ -232,6 +232,10 @@ void EffectsPluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             buffer.getNumSamples(),
             nullptr
         );
+    }
+    if(runtimeSwapRequired) {
+        shouldInitialize.store(true);
+        triggerAsyncUpdate();
     }
 }
 
@@ -259,6 +263,7 @@ void EffectsPluginProcessor::handleAsyncUpdate()
         // the real-time thread is using it. Depends on when the host will call prepareToPlay.
         runtime = std::make_unique<elem::Runtime<float>>(lastKnownSampleRate, lastKnownBlockSize);
         initJavaScriptEngine();
+        runtimeSwapRequired.store(false);
     }
 
     // Next we iterate over the current parameter values to update our local state
