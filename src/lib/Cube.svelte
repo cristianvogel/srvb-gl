@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Instance } from "@threlte/extras";
-  import { UI_ClassFSMs, UI_Controls } from "../stores/stores";
-  import type { Writable } from "svelte/store";
+  import { Accumulator, UI_ClassFSMs } from "../stores/stores";
   import { easeInOut3 } from "@thi.ng/math";
   import { degToRad } from "three/src/math/MathUtils.js";
+  import type { TimeIndex1D } from "./interp";
+  import type { Writable } from "svelte/store";
 
   export let nodeIndex: number;
   export let colors: { base: string; highlighted: string };
@@ -14,9 +15,9 @@
     nodeEnter: (e: MouseEvent) => void;
     nodeLeave: (e: MouseEvent) => void;
   };
-  export let accumulator: Writable<number> | null; // store
+  export let useAccumulator: Writable<TimeIndex1D> | null; // store 
 
-  $: normAcc = $accumulator != -1 ? ($accumulator ?? 0) / 100 : 0;
+  $: normAcc = $useAccumulator?.current || 0;
   $: spin = degToRad(360 * easeInOut3(normAcc));
 
 </script>

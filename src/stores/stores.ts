@@ -1,4 +1,4 @@
-import { writable, type Writable } from "svelte/store";
+import { readable, writable, type Readable, type Writable } from "svelte/store";
 
 import type {
   ClassFSM,
@@ -10,6 +10,7 @@ import type {
 import type { Vector2Tuple } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import type { Vec } from "@thi.ng/vectors";
+import { TimeIndex1D } from "../lib/interp";
 
 //-----------------  UI defs and parameters -------------------
 
@@ -95,7 +96,8 @@ export const ShowMiniBars: Writable<boolean> = writable(false);
 export const CSSRenderer: Writable<CSS2DRenderer> = writable(
   new CSS2DRenderer()
 );
-export const Accumulator: Writable<number> = writable(-1);
+// export const Accumulator: Writable<TimeIndex1D> = writable(new TimeIndex1D());
+export const Accumulator: Writable<TimeIndex1D> = writable(new TimeIndex1D());
 
 //---- Interpolation related stores -------------------
 export const CurrentVectorInterp: Writable<Vec> = writable([0, 0, 0]);

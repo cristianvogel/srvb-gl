@@ -69,16 +69,15 @@
   );
   // pulled up the delta count callback, easier to read?
   function deltaCount(delta: number) {
-    // Accumulator over 100, then set to -1 means that interpolations are over,
-    // so we stop the deltaCountTask
-    if ($Accumulator > 100) {
-      $Accumulator = -1;
+    if ($Accumulator.isStopped()) {
       deltaCountTask.stop();
       return;
     } else {
       let rate = Math.max(1.0e-3, $UI_Controls.get("smooth")?.value || 0);
-    rate = rate ** 1.6 * 0.25;
-      $Accumulator = $Accumulator + delta / rate;
+      rate = rate ** 1.6 * 0.25;
+      $Accumulator.setRate(rate);
+      $Accumulator.update();
+      $Accumulator = $Accumulator;
     }
   }
 
@@ -108,6 +107,7 @@
   interactivity();
 
   const userEvents = {
+
     // store a preset
     nodeRightClick: function (o: any) {
       $CurrentPickedId = o.instanceId;
@@ -122,19 +122,22 @@
       };
       dispatch("newSnapshot", preset);
     },
+
     // start new preset interpolation
     nodeClick: function (o: any) {
       $CurrentPickedId = o.instanceId;
       dispatch("interpolatePreset", true);
       // start the Threlte useTask delta-based frame count
       deltaCountTask.start();
-      // Special case: update the picked box id in the host, needs fancy halfway rounding error custom normalising too
+      // Special case: update the picked box id in the host
+      // which required some fancy rounding error finetuned normalisation
       const n = $CurrentPickedId;
       const rounded =
         n <= 32 ? roundTo(n / 64, 1 / 63) : roundTo((n + 1) / 64, 1 / 63);
       $NativeMessage.requestParamValueUpdate("box", rounded);
     },
-    // show mini chart overlay
+
+    // toggle mini chart overlay
     nodeEnter: function (o: any) {
       $ShowMiniBars = true;
       $CurrentFocusId = o.instanceId;
@@ -220,10 +223,10 @@
           ),
         }}
         position={pos}
-        accumulator={$CurrentPickedId === nodeIndex &&
-        get($UI_StorageFSMs[nodeIndex]) === "filled"
-          ? Accumulator
-          : null}
+        useAccumulator={$CurrentPickedId === nodeIndex &&
+          get($UI_StorageFSMs[nodeIndex]) === "filled"
+            ? Accumulator
+            : null}
         {userEvents}
       />
     {/each}

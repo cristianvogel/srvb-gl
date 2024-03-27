@@ -24,10 +24,9 @@ interface Debounced {
 }
 function debounce(context: FSM, transition: string, delay: number) {
   (context[transition] as unknown as Debounced).debounce(delay);
-  //console.count("debounce function");
 }
-// global helper function for array of FSMs
 
+// global helper function for array of FSMs
 export const getNodeStateAs = {
   number: (index: number) => {
     return Number(String(get(get(UI_StorageFSMs)[index])) === "filled" ? 1 : 0);
@@ -36,8 +35,8 @@ export const getNodeStateAs = {
     return String(get(get(UI_StorageFSMs)[index]));
   },
 };
-// simple toggle to lock a parameter in the UI
 
+// toggles to lock a parameter in the UI
 export const LockIcon: Readable<any> = readable({ LOCKED: "〇", OPEN: "◉" });
 const icon: any = get(LockIcon);
 // ⤵︎ Factory FSM object
@@ -58,8 +57,8 @@ export const createLockFSM = function (): FSM {
 };
 
 export const LocksMap: Writable<Map<Element | string, FSM | boolean>> = writable(new Map());
-// ⤵︎ Machine for handling UI to Host communication
 
+// ⤵︎ Machine for handling UI to Host communication
 export const UpdateStateFSM = fsm("ready", {
   ready: {
     updateFrom(src) {

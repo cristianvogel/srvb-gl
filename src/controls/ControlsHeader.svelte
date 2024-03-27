@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { tweened } from "svelte/motion";
   import { Accumulator, ConsoleText } from "../stores/stores";
-  import { cubicIn } from "svelte/easing";
   import { createEventDispatcher } from "svelte";
   import type { Writable } from "svelte/store";
-
+  
   export let foldFocus: Writable<number>;
   export let rotate: Writable<number>;
 
@@ -20,14 +18,14 @@
 
 <div class="grid grid-cols-6 grid-rows-1 row-start-1">
   <!-- console readout-->
-  <pre class="col-span-5">{$ConsoleText}</pre>
+  <pre class="col-span-5">{$ConsoleText} </pre>
 
-  {#if $Accumulator != -1}
+  {#if $Accumulator.isRunning()}
     <div class="col-span-5">
       <progress
         class=" absolute w-[95%] h-1 m-auto"
-        value={$Accumulator}
-        max="100"
+        value={$Accumulator.current ?? 0}
+        max="1"
       ></progress>
     </div>
   {/if}

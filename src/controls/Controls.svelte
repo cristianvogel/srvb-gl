@@ -86,12 +86,12 @@
           {#if newGroupDiff}
             <div class="flex">
               <pre class="text-xs text-[slategrey]">{group}</pre>
-              <svg class="absolute p-4">
-                <line x1="0" y1="0" x2="90%" y2="0" stroke="darkslategrey" />
+              <svg class= { `absolute top-30 left-2 h-2 mt-4` }>
+                <line x1="0" y1="0" x2="95%" y2="0" stroke="darkslategrey" />
               </svg>
             </div>
           {/if}
-          <label>
+          <label class="pb-0.5">
             {name}
             <input
               style="z-index: 100"

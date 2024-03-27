@@ -18,37 +18,44 @@
   } from "./stores/stores";
   import { onlyRegisteredParams } from "./utils/utils";
   import type { UI_ControlsMap, UI_Slider } from "../types";
+  import type { Vec } from "@thi.ng/vectors";
   import PresetSmush from "./data/PresetSmush.svelte";
   import Logo from "./lib/Logo.svelte";
-  import { Interpolation } from "./lib/interp";
+  import { VectorInterpolator } from "./lib/interp";
   import { get } from "svelte/store";
 
-  let interpolator: Interpolation;
+  let vectorInterpolator: VectorInterpolator;
   let controlsSnapshot: UI_ControlsMap;
   let smush: any; // binding to smush function in PresetSmush.svelte
 
   // Threlte Watch Utilities
   // 👀
   // Watch single Accumulator used for vector interpolation
-  watch(Accumulator, () => {
-    interpolator?.update($Accumulator || 0);
-    CurrentVectorInterp?.set( interpolator?.output() ); 
+  watch(Accumulator, (acc) => {
+    vectorInterpolator?.update(acc.current * 100);
+    CurrentVectorInterp?.set(vectorInterpolator?.current as Vec);
   });
 
   watch(CurrentPickedId, (id) => {
-    if (!interpolator) return;
-    if (interpolator?.isRunning()  && validTarget(id) ) {
+    if (!vectorInterpolator) return;
+    if (vectorInterpolator?.isRunning() && validTarget(id)) {
       console.log("changing course");
-      interpolator?.changeCourseTowards( validTarget(id) as UI_ControlsMap);
+      vectorInterpolator?.changeCourseTowards(
+        validTarget(id) as UI_ControlsMap
+      );
     }
   });
 
   watch(CurrentVectorInterp, () => {
     // Main interpolation run routine
-    if (interpolator?.isRunning()) {
+    if (vectorInterpolator?.isRunning()) {
       const sliders: Map<string, UI_Slider> = onlyRegisteredParams($UI_Controls);
-      if ($Accumulator === -1) {$Accumulator = 0}
-      $ConsoleText = $Accumulator.toFixed(0) + "%";
+
+      // user feedback progress bar
+      $ConsoleText = $Accumulator.isRunning()
+        ? ($Accumulator.current * 100).toFixed(0) + "%"
+        : "Ready.";
+
       sliders.forEach((param: UI_Slider, key: string) => {
         // 🤔 not sure why this is 'backwards' key and value
         const lock = typeof $LocksMap.get(key) === "boolean";
@@ -59,33 +66,36 @@
     }
   });
 
-  function validTarget( id: number ): false | UI_ControlsMap {
-    return get($UI_StorageFSMs[id]) === 'empty' ? false : $UI_StoredPresets[id];
+  function validTarget(id: number): false | UI_ControlsMap {
+    return get($UI_StorageFSMs[id]) === "empty" ? false : $UI_StoredPresets[id];
   }
 
   // Call back for interpolating a preset
   // hooked on event that triggers
   // new interpolation procedure
   function interpolatePreset(e: any) {
-    const noPreset = get($UI_StorageFSMs[$CurrentPickedId]) === 'empty';
-    if (noPreset) {                                               
+    const noPreset = get($UI_StorageFSMs[$CurrentPickedId]) === "empty";
+    if (noPreset) {
       console.warn("No preset to interpolate to.");
       return;
     }
-  
+
     controlsSnapshot = $UI_Controls;
 
-    if (interpolator === undefined || interpolator.isStopped()) {
+    if (vectorInterpolator === undefined || vectorInterpolator.isStopped()) {
       const params = onlyRegisteredParams(controlsSnapshot);
       const presetTuple = {
         a: params,
         b: $UI_StoredPresets[$CurrentPickedId],
       };
-      interpolator = new Interpolation(presetTuple);
-      $Accumulator = -1;
-      interpolator.reset(0);
+      vectorInterpolator = new VectorInterpolator(presetTuple);
+      vectorInterpolator.reset(0);
+      $Accumulator.start();
     } else {
-      interpolator?.changeCourseTowards($UI_StoredPresets[$CurrentPickedId]);
+      vectorInterpolator?.changeCourseTowards(
+        $UI_StoredPresets[$CurrentPickedId]
+      );
+      $Accumulator.update();
     }
   }
 
