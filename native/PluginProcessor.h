@@ -97,6 +97,7 @@ private:
     static std::string serialize(const std::string&function, const choc::value::Value&data, const juce::String&replacementChar = "%");
 
     //==============================================================================
+    std::atomic<bool> runtimeSwapRequired { false };
     std::atomic<bool> shouldInitialize { false };
     double lastKnownSampleRate = 0;
     int lastKnownBlockSize = 0;
