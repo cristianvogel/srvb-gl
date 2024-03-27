@@ -259,8 +259,6 @@ void EffectsPluginProcessor::handleAsyncUpdate()
     // First things first, we check the flag to identify if we should initialize the Elementary
     // runtime and engine.
     if (shouldInitialize.exchange(false)) {
-        // TODO: This is definitely not thread-safe! It could delete a Runtime instance while
-        // the real-time thread is using it. Depends on when the host will call prepareToPlay.
         runtime = std::make_unique<elem::Runtime<float>>(lastKnownSampleRate, lastKnownBlockSize);
         initJavaScriptEngine();
         runtimeSwapRequired.store(false);
